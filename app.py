@@ -8,7 +8,7 @@ TOKEN = bot_token
 bot = telegram.Bot(token=TOKEN)
 
 # Start flask app
-app = Flask(__name_)
+app = Flask(__name__)
     
 # Respond when someone sends a message
 @app.route('/{}'.format(TOKEN), methods=['POST'])
@@ -67,5 +67,7 @@ def set_webhook():
 @app.route('/')
 def index():
     return "."
+
+
 if __name__ == "__main__":
-    app.run(threaded=True)
+    app.run(threaded=True) # Enable threading to allow multiple users to use the bot at the same time
