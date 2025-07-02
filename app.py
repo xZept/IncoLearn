@@ -9,12 +9,7 @@ bot = telegram.Bot(token=TOKEN)
 
 # Start flask app
 app = Flask(__name_)
-
-# Set webhook
-@app.route('/setwebhook', methods=['GET', 'POST'])
-def set_webhook():
-    s = bot.setWebhook('{URL}{HOOK}'.format(URL=URL, HOOK=TOKEN))
-
+    
 # Respond when someone sends a message
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 def respond():
@@ -58,3 +53,19 @@ def respond():
             bot.sendMessage(chat_id=chat_id, text="Invalid command. Please use /help to see a list of available commands.", reply_to_message_id=msg_id)
             
     return "ok"
+
+# Set webhook
+@app.route('/setwebhook', methods=['GET', 'POST'])
+def set_webhook():
+    s = bot.setWebhook('{URL}{HOOK}'.format(URL=URL, HOOK=TOKEN))
+    if s:
+        return "webhook setup ok"
+    else:
+        return "webhook setup failed"
+    
+# Setup flask app
+@app.route('/')
+def index():
+    return "."
+if __name__ == "__main__":
+    app.run(threaded=True)
