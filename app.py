@@ -25,18 +25,10 @@ def respond():
     # For debugging purposes
     print("Message received: ", text)
     
-    # Display welcome message
-    if text == "/start":
-        bot_welcome = """
-        Welcome to IncoLearn 👋! 
-        This bot is developed by Allen James to help you with your studies. Let’s make studying easier, one message at a time!. Type /help to get started."
-        """
-        bot.sendMessage(chat_id=chat_id, text=bot_welcome, reply_to_message_id=msg_id)
         
     if text == "/help":
         bot_help = """
         Here is a list of the available commands:
-        /start - Show a brief welcome message.
         /help - Show a list of all available commands.
         /newquiz = Start creating a new quiz.
         /addquestion <question> = Add question to a quiz.
@@ -49,11 +41,12 @@ def respond():
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback - Send feedback about the bot to the developer.
         """
+        bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id)
+        
     else:
         try:
-            # Replace non-letter/non-number characters with _ then store them to the variable
-            text = re.sub(r"\W", "_", text)
-            
+            if text == "/newquiz":
+                print(sample)
             
         except Exception:
             bot.sendMessage(chat_id=chat_id, text="Invalid command. Please use /help to see a list of available commands.", reply_to_message_id=msg_id)
