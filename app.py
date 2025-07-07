@@ -26,6 +26,8 @@ def respond():
     print("Message received: ", text)
     
         
+    # Strip unecessary spaces and make it case-insensitive
+    text = text.strip().lower()
     if text == "/help":
         bot_help = """
         Here is a list of the available commands:
