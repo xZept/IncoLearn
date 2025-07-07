@@ -1,7 +1,7 @@
 from flask import Flask, request
 import telegram
 from telebot.credentials import bot_token, bot_user_name, URL
-
+ 
 global bot
 global TOKEN
 TOKEN = bot_token
@@ -30,9 +30,10 @@ def respond():
         bot_help = """
         Here is a list of the available commands:
         /help - Show a list of all available commands.
-        /newquiz = Start creating a new quiz.
-        /addquestion <question> = Add question to a quiz.
+        /newquiz <quiz name> = Start creating a new quiz.
+        /addquestion <quiz name> = Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
+        /viewquiz <quiz name> - Show the list of questions from a chosen quiz.
         /startquiz <quiz name> - Start answering a saved quiz.
         /editquiz <quiz name> - Modify an existing quiz.
         /deletequiz <quiz name> - Delete a quiz. This cannot be undone.
@@ -42,6 +43,9 @@ def respond():
         /feedback - Send feedback about the bot to the developer.
         """
         bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id)
+        
+        # For debugging purposes
+        print("Message received: ", text)
         
     else:
         try:
@@ -66,8 +70,8 @@ def set_webhook():
 # Setup flask app
 @app.route('/')
 def index():
-    return "."
+    return "Bot is running"
 
-# Line commented out to let Gunicorn run the app
+
 # if __name__ == "__main__":
 #     app.run(threaded=True) # Enable threading to allow multiple users to use the bot at the same time
