@@ -66,7 +66,7 @@ def set_webhook():
 # Setup flask app
 @app.route('/')
 def index():
-    return "."
+    return "Bot is running"
 
 # Line commented out to let Gunicorn run the app
 # if __name__ == "__main__":
