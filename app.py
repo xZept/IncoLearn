@@ -18,9 +18,7 @@ def respond():
     
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
-    
-    # Encode text for unicode compatibility
-    text = update.message.text.encode('utf-8').decode()
+    text = update.message.text
     
     # For debugging purposes
     print("Message received: ", text)
