@@ -1,6 +1,7 @@
 from flask import Flask, request
 import telegram
 from telebot.credentials import bot_token, bot_user_name, URL
+import asyncio
 
 global bot
 global TOKEN
@@ -41,7 +42,7 @@ def respond():
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback - Send feedback about the bot to the developer.
         """
-        bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id)
+        asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
         
     else:
         try:
