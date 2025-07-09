@@ -46,7 +46,11 @@ def respond():
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback - Send feedback about the bot to the developer.
         """
-        asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
+        try:
+            asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
+        except telegram.error.BadRequest:
+            # Fall back action in case the message cannot be found
+            asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help))
         
     else:
         try:
