@@ -2,11 +2,15 @@ from flask import Flask, request
 import telegram
 from telebot.credentials import bot_token, bot_user_name, URL
 import asyncio
+from telegram.request import HTTPXRequest
 
 global bot
 global TOKEN
 TOKEN = bot_token
-bot = telegram.Bot(token=TOKEN)
+
+# Increase connection pool size
+trequest = HTTPXRequest(connection_pool_size=20)
+bot = telegram.Bot(token=TOKEN, request=trequest)
 
 # Start flask app
 app = Flask(__name__)
