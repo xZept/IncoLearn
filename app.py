@@ -47,10 +47,13 @@ def respond():
         /feedback - Send feedback about the bot to the developer.
         """
         try:
-            asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
+            loop = asyncio.get_event_loop()
+            loop.create_task(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
         except telegram.error.BadRequest:
             # Fall back action in case the message cannot be found
-            asyncio.run(bot.sendMessage(chat_id=chat_id, text=bot_help))
+            loop = asyncio.get_event_loop()
+            loop.create_task(bot.sendMessage(chat_id=chat_id, text=bot_help))
+
         
     else:
         try:
