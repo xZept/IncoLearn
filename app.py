@@ -39,8 +39,8 @@ async def webhook(req: Request):
         bot_reply = """
         Here is a list of the available commands:
         /help - Show a list of all available commands.
-        /newquiz = Start creating a new quiz.
-        /addquestion <question> = Add question to a quiz.
+        /newquiz - Start creating a new quiz.
+        /addquestion <question> - Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
         /startquiz <quiz name> - Start answering a saved quiz.
         /editquiz <quiz name> - Modify an existing quiz.
