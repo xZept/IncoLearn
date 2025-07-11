@@ -17,7 +17,10 @@ async def root():
 @app.get("/setwebhook")
 async def set_webhook():
     webhook_url = f"{URL}/webhook/"
-    reponse = await client.get(f"{BASE_URL}/setwebhook?url={webhook_url}")
+    reponse = await client.get(
+        f"{BASE_URL}/setWebhook",
+        params={"url": webhook_url}
+    )
     return response.json()
     
 @app.post("/webhook/")
