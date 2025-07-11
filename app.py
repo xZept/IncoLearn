@@ -1,38 +1,39 @@
-from flask import Flask, request
-import telegram
+import httpx
+from fastapi import FastAPI, Request
 from telebot.credentials import bot_token, bot_user_name, URL
-import asyncio
-from telegram.request import HTTPXRequest
 
-global bot
-global TOKEN
 TOKEN = bot_token
+BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
-# Increase connection pool size
-trequest = HTTPXRequest(connection_pool_size=20)
-bot = telegram.Bot(token=TOKEN, request=trequest)
+client = httpx.AsyncClient()
 
-# Start flask app
-app = Flask(__name__)
-    
-# Respond when someone sends a message
-@app.route('/webhook', methods=['POST'])
-def respond():
-    # Retrieve message in JSON then transform it to Telegram object
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-    
-    chat_id = update.message.chat.id
-    msg_id = update.message.message_id
-    text = update.message.text
-    
-    # For debugging purposes
-    print("Message received: ", text)
-    
+app = FastAPI()    
+
+@app.get("/")
+async def root():
+    return {"message": "Bot is running"}
         
+        
+@app.get("/setwebhook")
+async def set_webhook():
+    webhook_url = f"{URL}/webhook/"
+    reponse = await client.get(f"{BASE_URL}/setwebhook?url={webhook_url}")
+    return response.json()
+    
+@app.post("/webhook/")
+async def webhook(req: Request):
+    data = await req.json()
+    
+    try:
+        chat_id = data['message']['chat']['id']
+        text = data['message']['text'].strip().lower()
+    except KeyError:
+        return{"ok": False, "error": "No valid message"}
+
     # Strip unecessary spaces and make it case-insensitive
     text = text.strip().lower()
     if text == "/help":
-        bot_help = """
+        bot_reply = """
         Here is a list of the available commands:
         /help - Show a list of all available commands.
         /newquiz = Start creating a new quiz.
@@ -46,40 +47,13 @@ def respond():
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback - Send feedback about the bot to the developer.
         """
-        try:
-            loop = asyncio.get_event_loop()
-            loop.create_task(bot.sendMessage(chat_id=chat_id, text=bot_help, reply_to_message_id=msg_id))
-        except telegram.error.BadRequest:
-            # Fall back action in case the message cannot be found
-            loop = asyncio.get_event_loop()
-            loop.create_task(bot.sendMessage(chat_id=chat_id, text=bot_help))
-
+    else:
+        bot_reply = f"You said: {text}"
         
-    else:
-        try:
-            # Put bot command logic here
-            if text == "/newquiz":
-                print("sample")
+    await client.get(
+        f"{BASE_URL}/sendMessage",
+        params={"chat_id": chat_id, "text": bot_reply}
+    )
             
-        except Exception:
-            bot.sendMessage(chat_id=chat_id, text="Invalid command. Please use /help to see a list of available commands.", reply_to_message_id=msg_id)
-            
-    return "ok"
+    return{"ok": True}
 
-# Set webhook
-@app.route('/setwebhook', methods=['GET', 'POST'])
-def set_webhook():
-    s = bot.setWebhook(f"{URL}/webhook")
-    if s:
-        return "webhook setup ok"
-    else:
-        return "webhook setup failed"
-    
-# Setup flask app
-@app.route('/')
-def index():
-    return "Bot is running"
-
-# Line commented out to let Gunicorn run the app
-# if __name__ == "__main__":
-#     app.run(threaded=True) # Enable threading to allow multiple users to use the bot at the same time
