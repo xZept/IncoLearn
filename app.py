@@ -1,6 +1,7 @@
 import httpx
 from fastapi import FastAPI, Request
 from telebot.credentials import bot_token, bot_user_name, URL
+import sqlite3
 
 TOKEN = bot_token
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
