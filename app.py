@@ -118,8 +118,7 @@ async def webhook(req: Request):
         await store_user_data(username, first_name, last_name)
         
         bot_reply = """
-        Welcome to IncoLearn! To start creating your first quiz, type /newquiz.
-        To view other available commands, type /help.
+        Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
         
     else:
