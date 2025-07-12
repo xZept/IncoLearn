@@ -53,7 +53,7 @@ async def store_user_data(username, first_name, last_name):
     )
     print("Database created successfully!") # For debugging purposes
     
-    # Insert encrypted values
+    # Insert encrypted values   
     cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
     
     # For debugging purposes
