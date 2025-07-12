@@ -46,16 +46,19 @@ async def store_user_data(username, first_name, last_name):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user(
             user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            username TEXT NOT NULL, 
+            username TEXT UNIQUE NOT NULL, 
             first_name TEXT NOT NULL, 
             last_name TEXT NOT NULL    
         )"""
     )
     print("Database created successfully!") # For debugging purposes
     
-    # Insert encrypted values   
-    cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
-    
+    # Insert encrypted values if it does not exist yet
+    try:
+        cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
+        print("User inserted.")
+    except sqlite3.IntegrityError:
+        print("User already exists. Skipping insertion.")
     # For debugging purposes
     print(f"User information inserted successfully!") 
     cur.execute("SELECT * FROM user")
