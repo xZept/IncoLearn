@@ -126,15 +126,14 @@ async def webhook(req: Request):
         """
         
     elif text == "/feedback":
-        recipient_address = "allenjames.laxamana@gmail.com"
         sender_username = from_user.get("username") or "Not set"
         
         # Send an e-mail
         s = smtplib.SMTP('smtp.gmail.com', 587)
         s.starttls()
         s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
-        message = (f"IncoLearn user feedback from username: {sender_username} - ", text.replace("/feedback", "").strip())
-        s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
+        message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace("/feedback", "").strip()}"
+        s.sendmail("allenjames.laxamana03@gmail.com", "recipient_address", message)
         s.quit()
         
     else:
