@@ -137,6 +137,7 @@ async def webhook(req: Request):
         s.sendmail("allenjames.laxamana03@gmail.com", "recipient_address", message)
         s.quit()
         
+        bot_reply = "Feedback sent to Allen James!"
     else:
         bot_reply = f"You said: {text}"
         
