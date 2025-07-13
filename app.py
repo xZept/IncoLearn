@@ -125,7 +125,7 @@ async def webhook(req: Request):
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
         
-    elif text.find("/feedback"):
+    elif text.startswith("/feedback"):
         from_user = data["message"]["from"]
         sender_username = from_user.get("username") or "Not set"
         
@@ -133,7 +133,7 @@ async def webhook(req: Request):
         s = smtplib.SMTP('smtp.gmail.com', 587)
         s.starttls()
         s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
-        message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace("/feedback", "").strip()}"
+        message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace('/feedback', '').strip()}"
         s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
         s.quit()
         
