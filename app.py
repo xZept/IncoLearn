@@ -126,6 +126,7 @@ async def webhook(req: Request):
         """
         
     elif text == "/feedback":
+        from_user = data["message"]["from"]
         sender_username = from_user.get("username") or "Not set"
         
         # Send an e-mail
