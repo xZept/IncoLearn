@@ -134,7 +134,7 @@ async def webhook(req: Request):
         s.starttls()
         s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
         message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace("/feedback", "").strip()}"
-        s.sendmail("allenjames.laxamana03@gmail.com", "recipient_address", message)
+        s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
         s.quit()
         
         bot_reply = "Feedback sent to Allen James!"
