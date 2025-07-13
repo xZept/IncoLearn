@@ -119,6 +119,7 @@ async def webhook(req: Request):
         username = from_user.get("username") or "Not set"
         first_name = from_user.get("first_name") or "Not provided"
         last_name = from_user.get("last_name") or "Not provided"
+        print(username, first_name, last_name) # For debugging
         await store_user_data(username, first_name, last_name)
         
         bot_reply = """
@@ -134,6 +135,7 @@ async def webhook(req: Request):
         s.starttls()
         s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
         message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace('/feedback', '').strip()}"
+        print(message) # For debugging
         s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
         s.quit()
         
