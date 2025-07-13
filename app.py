@@ -56,14 +56,20 @@ async def store_user_data(username, first_name, last_name):
     
     # Insert encrypted values if it does not exist yet
     try:
-        cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
+        cur.execute("INSERT OR IGNORE INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
         print("User inserted successfully!") # For debugging
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
     cur.execute("SELECT * FROM user")
     rows = cur.fetchall()
     for row in rows:
-        print(row.decrypt(cipher_suite))
+        decrypted_row = (
+            row[0],
+            row[1].decrypt(cipher_suite),
+            row[2].decrypt(cipher_suite),
+            row[3].decrypt(cipher_suite)
+        )
+        print(decrypted_row)
     
     # Commit the message and close the connection
     connection.commit()
