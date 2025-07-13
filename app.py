@@ -5,6 +5,7 @@ import sqlite3
 from telegram import Update
 from cryptography.fernet import Fernet
 import os
+import smtplib
 
 TOKEN = bot_token
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
@@ -109,7 +110,7 @@ async def webhook(req: Request):
         /setreminder <quiz name> - Send a random question from an existing quiz every set time.
         /stopreminder - Stop the active /setreminder.
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
-        /feedback - Send feedback about the bot to the developer.
+        /feedback <message> - Send feedback about the bot to the developer.
         """
     
     elif text == "/start":
@@ -123,6 +124,18 @@ async def webhook(req: Request):
         bot_reply = """
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
+        
+    elif text == "/feedback":
+        recipient_address = "allenjames.laxamana@gmail.com"
+        sender_username = from_user.get("username") or "Not set"
+        
+        # Send an e-mail
+        s = smtplib.SMTP('smtp.gmail.com', 587)
+        s.starttls()
+        s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
+        message = (f"IncoLearn user feedback from username: {sender_username} - ", text.replace("/feedback", "").strip())
+        s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
+        s.quit()
         
     else:
         bot_reply = f"You said: {text}"
