@@ -125,7 +125,7 @@ async def webhook(req: Request):
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
         
-    elif text == "/feedback":
+    elif text.find("/feedback"):
         from_user = data["message"]["from"]
         sender_username = from_user.get("username") or "Not set"
         
