@@ -55,8 +55,9 @@ async def store_user_data(username, first_name, last_name):
     print("Database created successfully!") # For debugging purposes
     # Commit the query and close the connection
     connection.commit()
-    connection.close()
     cur.close()
+    connection.close()
+    
  
     
     # Insert encrypted values if it does not exist yet
@@ -67,8 +68,8 @@ async def store_user_data(username, first_name, last_name):
         print("User inserted successfully!") # For debugging
         # Commit the query and close the connection
         connection.commit()
-        connection.close()
         cur.close()
+        connection.close()
  
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
@@ -88,8 +89,8 @@ async def store_user_data(username, first_name, last_name):
     
     # Commit the query and close the connection
     connection.commit()
-    connection.close()
     cur.close()
+    connection.close()
  
 @app.get("/")
 async def root():
@@ -160,6 +161,7 @@ async def webhook(req: Request):
         s.quit()
         
         bot_reply = "Feedback sent to Allen James!"
+        
     else:
         bot_reply = f"You said: {text}"
         
