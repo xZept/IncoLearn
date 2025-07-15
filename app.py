@@ -74,7 +74,7 @@ async def store_user_data(username, first_name, last_name):
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
         
-    connection = sqlite3.connect("db.incolearn.db")
+    connection = sqlite3.connect("db/incolearn.db")
     cur = connection.cursor()
     cur.execute("SELECT * FROM user")
     rows = cur.fetchall()
