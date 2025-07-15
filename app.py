@@ -1,3 +1,14 @@
+"""
+    Process for database transactions:
+    1. Create connection
+    2. Create cursor
+    3. Create Query string
+    4. Execute the query
+    5. Commit to the query
+    6. Close the cursor
+    7. Close the connection
+"""
+
 import httpx
 from fastapi import FastAPI, Request
 from telebot.credentials import bot_token, bot_user_name, URL
@@ -81,9 +92,9 @@ async def store_user_data(username, first_name, last_name):
     for row in rows:
         decrypted_row = (
             row[0],
-            row[1].decrypt(cipher_suite),
-            row[2].decrypt(cipher_suite),
-            row[3].decrypt(cipher_suite)
+            cipher_suite.decrypt(row[1]),
+            cipher_suite.decrypt(row[2]),
+            cipher_suite.decrypt(row[3])
         )
         print(decrypted_row)
     
