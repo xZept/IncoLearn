@@ -156,7 +156,7 @@ async def webhook(req: Request):
                     CREATE TABLE IF NOT EXISTS quiz(
                         quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
-                        quiz_name TEXT UNIQUE NOT NULL
+                        quiz_name TEXT UNIQUE NOT NULL,
                         FOREIGN KEY(user_id) REFERENCES user(user_id))
                     """)
         print("Database quiz created successfully!") # For debugging
