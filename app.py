@@ -56,7 +56,8 @@ async def store_user_data(username, first_name, last_name):
     
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user(
-            username TEXT PRIMARY KEY UNIQUE NOT NULL, 
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            username TEXT UNIQUE NOT NULL, 
             first_name TEXT NOT NULL, 
             last_name TEXT NOT NULL    
         )"""
@@ -88,8 +89,9 @@ async def store_user_data(username, first_name, last_name):
     for row in rows:
         decrypted_row = (
             row[0],
-            cipher_suite.decrypt(row[1]),
-            cipher_suite.decrypt(row[2])
+            row[1],
+            cipher_suite.decrypt(row[2]),
+            cipher_suite.decrypt(row[3])
         )
         print(decrypted_row)
     
