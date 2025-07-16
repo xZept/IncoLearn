@@ -45,8 +45,7 @@ cipher_suite = Fernet(key.encode())
 
 # Store user information asynchronously
 async def store_user_data(username, first_name, last_name):
-    # Encrypt the information
-    username_enc = cipher_suite.encrypt(username.encode())
+    # Encrypt the first and last name
     first_name_enc = cipher_suite.encrypt(first_name.encode())
     last_name_enc = cipher_suite.encrypt(last_name.encode())
     
@@ -75,7 +74,7 @@ async def store_user_data(username, first_name, last_name):
     try:
         connection = sqlite3.connect("db/incolearn.db")
         cur = connection.cursor()
-        cur.execute("INSERT OR IGNORE INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username_enc, first_name_enc, last_name_enc))
+        cur.execute("INSERT OR IGNORE INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name_enc, last_name_enc))
         print("User inserted successfully!") # For debugging
         # Commit the query and close the connection
         connection.commit()
