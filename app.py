@@ -56,8 +56,7 @@ async def store_user_data(username, first_name, last_name):
     
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user(
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            username TEXT UNIQUE NOT NULL, 
+            username TEXT PRIMARY KEY UNIQUE NOT NULL, 
             first_name TEXT NOT NULL, 
             last_name TEXT NOT NULL    
         )"""
@@ -67,8 +66,6 @@ async def store_user_data(username, first_name, last_name):
     connection.commit()
     cur.close()
     connection.close()
-    
- 
     
     # Insert encrypted values if it does not exist yet
     try:
@@ -91,9 +88,8 @@ async def store_user_data(username, first_name, last_name):
     for row in rows:
         decrypted_row = (
             row[0],
-            row[1],
-            cipher_suite.decrypt(row[2]),
-            cipher_suite.decrypt(row[3])
+            cipher_suite.decrypt(row[1]),
+            cipher_suite.decrypt(row[2])
         )
         print(decrypted_row)
     
@@ -132,8 +128,8 @@ async def webhook(req: Request):
         bot_reply = """
         Here is a list of the available commands:
         /help - Show a list of all available commands.
-        /newquiz - Start creating a new quiz.
-        /addquestion <question> - Add question to a quiz.
+        /newquiz <quiz name> - Start creating a new quiz.
+        /addquestion <quiz name> - Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
         /startquiz <quiz name> - Start answering a saved quiz.
         /editquiz <quiz name> - Modify an existing quiz.
@@ -143,6 +139,21 @@ async def webhook(req: Request):
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback <message> - Send feedback about the bot to the developer.
         """
+        
+    elif text.startswith("/newquiz"):
+        # Obtain user information
+        from_user = data["message"]["from"]
+        sender_username = from_user.get("username") or "Not set"
+        
+        # Create a table if these is none yet
+        connection = sqlite3.connect("db/incolearn.db")
+        cursor = connection.cursor()
+        cur.execute("""
+                    CREATE TABLE IF NOT EXIST quiz(
+                        quiz_id INTEGER PRIMARY KEY AUTOINCREMENT
+                        user_id 
+                    )
+                    """)
     
     elif text == "/start":
         # Obtain user data then store it using a function
