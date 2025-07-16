@@ -157,8 +157,7 @@ async def webhook(req: Request):
                         quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
                         quiz_name TEXT UNIQUE NOT NULL
-                        FOREIGN KEY(user_id) REFERENCES user(user_id)
-                    )
+                        FOREIGN KEY(user_id) REFERENCES user(user_id))
                     """)
         print("Database quiz created successfully!") # For debugging
         connection.commit()
