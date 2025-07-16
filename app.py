@@ -153,7 +153,7 @@ async def webhook(req: Request):
         connection = sqlite3.connect("db/incolearn.db")
         cur = connection.cursor()
         cur.execute("""
-                    CREATE TABLE IF NOT EXIST quiz(
+                    CREATE TABLE IF NOT EXISTS quiz(
                         quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
                         quiz_name TEXT UNIQUE NOT NULL
