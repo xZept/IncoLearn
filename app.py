@@ -168,6 +168,8 @@ async def webhook(req: Request):
         print(quiz_name) # For debugging
 
         # Retrieve user_id
+        connection = sqlite3.connect("db/incolearn.db")
+        cur = connection.cursor()
         cur.execute("SELECT * FROM user WHERE username=?", (sender_username))
         user = cur.fetchone()
         sender_user_id = user[0]
@@ -176,6 +178,8 @@ async def webhook(req: Request):
         connection.close()
 
         # Insert new quiz to the table
+        connection = sqlite3.connect("db/incolearn.db")
+        cur = connection.cursor()
         cur.execute("INSERT OR IGNORE INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
         connection.commit()
         cur.close()
