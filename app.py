@@ -62,7 +62,7 @@ async def store_user_data(username, first_name, last_name):
             last_name TEXT NOT NULL    
         )"""
     )
-    print("Database created successfully!") # For debugging purposes
+    print("Database user created successfully!") # For debugging purposes
     # Commit the query and close the connection
     connection.commit()
     cur.close()
@@ -84,6 +84,8 @@ async def store_user_data(username, first_name, last_name):
         
     connection = sqlite3.connect("db/incolearn.db")
     cur = connection.cursor()
+    
+    # For debugging
     cur.execute("SELECT * FROM user")
     rows = cur.fetchall()
     for row in rows:
@@ -147,16 +149,39 @@ async def webhook(req: Request):
         from_user = data["message"]["from"]
         sender_username = from_user.get("username") or "Not set"
         
-        # Create a table if these is none yet
+        # Create a table if there is none yet
         connection = sqlite3.connect("db/incolearn.db")
-        cursor = connection.cursor()
+        cur = connection.cursor()
         cur.execute("""
                     CREATE TABLE IF NOT EXIST quiz(
-                        quiz_id INTEGER PRIMARY KEY AUTOINCREMENT
-                        user_id 
+                        quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        quiz_name TEXT UNIQUE NOT NULL
+                        FOREIGN KEY(user_id) REFERENCES user(user_id)
                     )
                     """)
-    
+        print("Database quiz created successfully!") # For debugging
+        connection.commit()
+        cur.close()
+        connection.close()
+        
+        quiz_name = text.replace("/newquiz","").strip()
+        print(quiz_name) # For debugging
+
+        # Retrieve user_id
+        cur.execute("SELECT * FROM user WHERE username=?", (sender_username))
+        user = cur.fetchone()
+        sender_user_id = user[0]
+        connection.commit()
+        cur.close()
+        connection.close()
+
+        # Insert new quiz to the table
+        cur.execute("INSERT OR IGNORE INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
+        connection.commit()
+        cur.close()
+        connection.close()
+        
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
