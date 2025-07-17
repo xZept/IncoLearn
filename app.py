@@ -183,6 +183,16 @@ async def webhook(req: Request):
             print("Database user hasn't been created yet!") # For debugging
             store_user_data(sender_username, first_name, last_name)
             print("Database user created!") # For debugging
+            
+            # Perform database transaction
+            connection = sqlite3.connect("db/incolearn.db")
+            cur = connection.cursor()
+            cur.execute("SELECT * FROM user WHERE username=?", (sender_username))
+            user = cur.fetchone()
+            sender_user_id = user[0]
+            connection.commit()
+            cur.close()
+            connection.close()
 
         # Insert new quiz to the table
         connection = sqlite3.connect("db/incolearn.db")
