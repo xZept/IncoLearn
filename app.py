@@ -148,24 +148,32 @@ async def webhook(req: Request):
         # Obtain user information
         from_user = data["message"]["from"]
         sender_username = from_user.get("username") or "Not set"
+        first_name = from_user.get("first_name") or "Not provided"
+        last_name = from_user.get("last_name") or "Not provided"
         
         # Create a table if there is none yet
-        connection = sqlite3.connect("db/incolearn.db")
-        cur = connection.cursor()
-        cur.execute("""
-                    CREATE TABLE IF NOT EXISTS quiz(
-                        quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        quiz_name TEXT UNIQUE NOT NULL,
-                        FOREIGN KEY(user_id) REFERENCES user(user_id))
-                    """)
-        print("Database quiz created successfully!") # For debugging
-        connection.commit()
-        cur.close()
-        connection.close()
+        try:
+            connection = sqlite3.connect("db/incolearn.db")
+            cur = connection.cursor()
+            cur.execute("""
+                        CREATE TABLE IF NOT EXISTS quiz(
+                            quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            quiz_name TEXT UNIQUE NOT NULL,
+                            FOREIGN KEY(user_id) REFERENCES user(user_id))
+                        """)
+            print("Database quiz created successfully!") # For debugging
+            connection.commit()
+            cur.close()
+            connection.close()
+            
+        except:
+            print("Database user hasn't been created yet!") # For debugging
+            store_user_data(sender_username, first_name, last_name)
+            print("Database user created!") # For debugging
         
         quiz_name = text.replace("/newquiz","").strip()
-        print(quiz_name) # For debugging
+        print("Quiz name: ", quiz_name) # For debugging
 
         # Retrieve user_id
         connection = sqlite3.connect("db/incolearn.db")
