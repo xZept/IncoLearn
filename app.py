@@ -173,7 +173,7 @@ async def webhook(req: Request):
         try:
             connection = sqlite3.connect("db/incolearn.db")
             cur = connection.cursor()
-            cur.execute("SELECT * FROM user WHERE username=?", (sender_username))
+            cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
             sender_user_id = user[0]
             connection.commit()
@@ -187,7 +187,7 @@ async def webhook(req: Request):
             # Perform database transaction
             connection = sqlite3.connect("db/incolearn.db")
             cur = connection.cursor()
-            cur.execute("SELECT * FROM user WHERE username=?", (sender_username))
+            cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
             sender_user_id = user[0]
             connection.commit()
