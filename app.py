@@ -173,6 +173,16 @@ async def webhook(req: Request):
         cur.close()
         connection.close()
         
+        # Display quiz table (for debugging)
+        connection = sqlite3.connect("db/incolearn.db")
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM quiz")
+        rows = cur.fetchall()
+        for row in rows:
+            print(row)
+        cur.close()
+        connection.close()
+        
         bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
         
     elif text == "/start":
