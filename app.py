@@ -29,7 +29,7 @@ async def store_user_data(username, first_name, last_name):
     # Create database and cursor object from the cursor class
     os.makedirs("db", exist_ok=True) # Create folder if it does not exist
     
-    connection = sqlite3.connect('db/incolearn.db')
+    connection = sqlite3.connect('db/incolearn.db', timeout=20)
     cur = connection.cursor()
     
     cur.execute("""
@@ -48,7 +48,7 @@ async def store_user_data(username, first_name, last_name):
     
     # Insert encrypted values if it does not exist yet
     try:
-        connection = sqlite3.connect("db/incolearn.db", isolation_level="EXCLUSIVE")
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
         cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
         print("User inserted successfully!") # For debugging
@@ -60,7 +60,7 @@ async def store_user_data(username, first_name, last_name):
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
         
-    connection = sqlite3.connect("db/incolearn.db")
+    connection = sqlite3.connect("db/incolearn.db", timeout=20)
     cur = connection.cursor()
     
     # For debugging
@@ -124,7 +124,7 @@ async def webhook(req: Request):
         last_name = from_user.get("last_name") or "Not provided"
         
         # Create a table if there is none yet
-        connection = sqlite3.connect("db/incolearn.db")
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
         cur.execute("""
                     CREATE TABLE IF NOT EXISTS quiz(
@@ -143,7 +143,7 @@ async def webhook(req: Request):
 
         # Retrieve user_id
         try:
-            connection = sqlite3.connect("db/incolearn.db")
+            connection = sqlite3.connect("db/incolearn.db", timeout=20)
             cur = connection.cursor()
             cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
@@ -157,7 +157,7 @@ async def webhook(req: Request):
             print("Database user created!") # For debugging
             
             # Perform database transaction
-            connection = sqlite3.connect("db/incolearn.db")
+            connection = sqlite3.connect("db/incolearn.db", timeout=20)
             cur = connection.cursor()
             cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
@@ -169,7 +169,7 @@ async def webhook(req: Request):
 
         # Insert new quiz to the table
         try:
-            connection = sqlite3.connect("db/incolearn.db")
+            connection = sqlite3.connect("db/incolearn.db", timeout=20)
             cur = connection.cursor()
             cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
             connection.commit()
@@ -180,7 +180,7 @@ async def webhook(req: Request):
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
             
         # Display quiz table (for debugging)
-        connection = sqlite3.connect("db/incolearn.db")
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
         cur.execute("SELECT * FROM quiz")
         rows = cur.fetchall()
