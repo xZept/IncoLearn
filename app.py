@@ -49,7 +49,7 @@ async def store_user_data(username, first_name, last_name):
     try:
         connection = sqlite3.connect("db/incolearn.db")
         cur = connection.cursor()
-        cur.execute("INSERT OR IGNORE INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name_enc, last_name_enc))
+        cur.execute("INSERT OR IGNORE INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
         print("User inserted successfully!") # For debugging
         # Commit the query and close the connection
         connection.commit()
