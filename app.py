@@ -165,14 +165,19 @@ async def webhook(req: Request):
             cur.close()
             connection.close()
 
+
         # Insert new quiz to the table
-        connection = sqlite3.connect("db/incolearn.db")
-        cur = connection.cursor()
-        cur.execute("INSERT OR IGNORE INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
-        connection.commit()
-        cur.close()
-        connection.close()
-        
+        try:
+            connection = sqlite3.connect("db/incolearn.db")
+            cur = connection.cursor()
+            cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
+            connection.commit()
+            cur.close()
+            connection.close()
+            bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
+        except:
+            bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
+            
         # Display quiz table (for debugging)
         connection = sqlite3.connect("db/incolearn.db")
         cur = connection.cursor()
@@ -182,8 +187,6 @@ async def webhook(req: Request):
             print(row)
         cur.close()
         connection.close()
-        
-        bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
         
     elif text == "/start":
         # Obtain user data then store it using a function
