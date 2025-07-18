@@ -14,7 +14,6 @@ from fastapi import FastAPI, Request
 from telebot.credentials import bot_token, bot_user_name, URL
 import sqlite3
 from telegram import Update
-from cryptography.fernet import Fernet
 import os
 import smtplib
 
@@ -25,30 +24,8 @@ client = httpx.AsyncClient()
 
 app = FastAPI()    
 
-# Generate a cypher key if file does not exist yet
-file_path = "telebot/encryption_key.txt"
-os.makedirs("telebot", exist_ok=True)
-
-if not os.path.exists(file_path):
-    key = Fernet.generate_key()
-    with open(file_path, 'w') as file:
-        file.write(key.decode())
-    print("Encryption key generated and saved.")
-else:
-    print(f"The file '{file_path}' already exists.")
-
-# Load the key and initialize cipher_suite
-with open(file_path, 'r') as file:
-    key = file.read().strip()
-
-cipher_suite = Fernet(key.encode())
-
 # Store user information asynchronously
 async def store_user_data(username, first_name, last_name):
-    # Encrypt the first and last name
-    first_name_enc = cipher_suite.encrypt(first_name.encode())
-    last_name_enc = cipher_suite.encrypt(last_name.encode())
-    
     # Create database and cursor object from the cursor class
     os.makedirs("db", exist_ok=True) # Create folder if it does not exist
     connection = sqlite3.connect('db/incolearn.db')
@@ -89,13 +66,7 @@ async def store_user_data(username, first_name, last_name):
     cur.execute("SELECT * FROM user")
     rows = cur.fetchall()
     for row in rows:
-        decrypted_row = (
-            row[0],
-            row[1],
-            cipher_suite.decrypt(row[2]),
-            cipher_suite.decrypt(row[3])
-        )
-        print(decrypted_row)
+        print(row)
     
     # Commit the query and close the connection
     connection.commit()
