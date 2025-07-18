@@ -152,7 +152,7 @@ async def webhook(req: Request):
             connection.close()
         except sqlite3.OperationalError:
             print("Database user hasn't been created yet!") # For debugging
-            store_user_data(sender_username, first_name, last_name)
+            await store_user_data(sender_username, first_name, last_name)
             print("Database user created!") # For debugging
             
             # Perform database transaction
