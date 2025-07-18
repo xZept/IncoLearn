@@ -28,6 +28,7 @@ app = FastAPI()
 async def store_user_data(username, first_name, last_name):
     # Create database and cursor object from the cursor class
     os.makedirs("db", exist_ok=True) # Create folder if it does not exist
+    
     connection = sqlite3.connect('db/incolearn.db')
     cur = connection.cursor()
     
@@ -47,7 +48,7 @@ async def store_user_data(username, first_name, last_name):
     
     # Insert encrypted values if it does not exist yet
     try:
-        connection = sqlite3.connect("db/incolearn.db")
+        connection = sqlite3.connect("db/incolearn.db", isolation_level="EXCLUSIVE")
         cur = connection.cursor()
         cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
         print("User inserted successfully!") # For debugging
