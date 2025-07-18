@@ -173,6 +173,8 @@ async def webhook(req: Request):
         cur.close()
         connection.close()
         
+        bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
+        
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
