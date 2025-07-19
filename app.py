@@ -61,7 +61,7 @@ async def store_user_data(username, first_name, last_name):
         print("User already exists. Skipping insertion.")
         
     # For debugging
-    await display_tables()
+    await display_tables(username, first_name, last_name)
     
 async def create_quiz_table(username, first_name, last_name):
     try:
@@ -106,38 +106,43 @@ async def create_question_table(username, first_name, last_name):
         print("Database user created!") # For debugging
         
 # For debugging
-async def display_tables():
-    # Display user table
-    connection = sqlite3.connect("db/incolearn.db", timeout=20)
-    cur = connection.cursor()
-    cur.execute("SELECT * FROM user")
-    rows = cur.fetchall()
-    for row in rows:
-        print(row)
-    connection.commit()
-    cur.close()
-    connection.close()
-    
-    # Display quiz table
-    connection = sqlite3.connect("db/incolearn.db", timeout=20)
-    cur = connection.cursor()
-    cur.execute("SELECT * FROM quiz")
-    rows = cur.fetchall()
-    for row in rows:
-        print(row)
-    cur.close()
-    connection.close()
-    
-    # Display question table
-    connection = sqlite3.connect("db/incolearn.db", timeout=20)
-    cur = connection.cursor()
-    cur.execute("SELECT * FROM question")
-    rows = cur.fetchall()
-    for row in rows:
-        print(row)
-    cur.close()
-    connection.close()
- 
+async def display_tables(username, first_name, last_name):
+    try:
+        # Display user table
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM user")
+        rows = cur.fetchall()
+        for row in rows:
+            print(row)
+        connection.commit()
+        cur.close()
+        connection.close()
+        
+        # Display quiz table
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM quiz")
+        rows = cur.fetchall()
+        for row in rows:
+            print(row)
+        cur.close()
+        connection.close()
+        
+        # Display question table
+        connection = sqlite3.connect("db/incolearn.db", timeout=20)
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM question")
+        rows = cur.fetchall()
+        for row in rows:
+            print(row)
+        cur.close()
+        connection.close()
+    except sqlite3.OperationalError:
+        store_user_data(username, first_name, last_name)
+        create_question_table(username, first_name, last_name)
+        create_quiz_table(username, first_name, last_name)
+        
 @app.get("/")
 async def root():
     return {"message": "Bot is running"}
@@ -231,7 +236,7 @@ async def webhook(req: Request):
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
         
         #For debugging
-        await display_tables()
+        await display_tables(sender_username, first_name, last_name)
         
     elif text.startswith("/addquestion"):
         # Obtain user information
@@ -295,7 +300,7 @@ async def webhook(req: Request):
         connection.close()
         
         # For debugging
-        await display_tables()    
+        await display_tables(username, first_name, last_name)    
     
     elif text == "/start":
         # Obtain user data then store it using a function
