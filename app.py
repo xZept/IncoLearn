@@ -247,7 +247,7 @@ async def webhook(req: Request):
         
         # Store quiz name
         quiz_name = text.replace("/addquestion", "").strip()
-        
+        print(quiz_name) # For debugging
         # Prompt the user for the question
         bot_prompt = "Enter the question."
         await client.get(
@@ -295,6 +295,7 @@ async def webhook(req: Request):
         connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
         cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question))
+        print(question) # For debugging
         connection.commit()
         cur.close()
         connection.close()
