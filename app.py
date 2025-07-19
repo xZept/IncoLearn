@@ -139,9 +139,9 @@ async def display_tables(username, first_name, last_name):
         cur.close()
         connection.close()
     except sqlite3.OperationalError:
-        store_user_data(username, first_name, last_name)
-        create_question_table(username, first_name, last_name)
-        create_quiz_table(username, first_name, last_name)
+        await store_user_data(username, first_name, last_name)
+        await create_question_table(username, first_name, last_name)
+        await create_quiz_table(username, first_name, last_name)
         
 @app.get("/")
 async def root():
@@ -263,7 +263,7 @@ async def webhook(req: Request):
             return{"ok": False, "error": "No valid message"}
         
         print(question) # For debugging
-        create_question_table(username, first_name, last_name)
+        await create_question_table(username, first_name, last_name)
         
         # Retrieve quiz_id
         try:
