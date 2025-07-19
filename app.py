@@ -262,6 +262,7 @@ async def webhook(req: Request):
         except KeyError:
             return{"ok": False, "error": "No valid message"}
         
+        print(question) # For debugging
         create_question_table(username, first_name, last_name)
         
         # Retrieve quiz_id
@@ -295,7 +296,6 @@ async def webhook(req: Request):
         connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
         cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question))
-        print(question) # For debugging
         connection.commit()
         cur.close()
         connection.close()
