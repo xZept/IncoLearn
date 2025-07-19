@@ -294,7 +294,7 @@ async def webhook(req: Request):
         # Insert question to the table
         connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
-        cur.execute("INSERT INTO question (quiz_id, question_text VALUES(?,?)", (quiz_id, question))
+        cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question))
         connection.commit()
         cur.close()
         connection.close()
