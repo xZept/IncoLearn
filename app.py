@@ -288,7 +288,7 @@ async def webhook(req: Request):
             connection.commit()
             cur.close()
             connection.close()
-        except sqlite3.TypeError:
+        except TypeError:
             bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
         
         # Insert question to the table
