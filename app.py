@@ -57,9 +57,6 @@ async def store_user_data(username, first_name, last_name):
  
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
-        
-    # For debugging
-    await display_tables(username, first_name, last_name)
     
 async def create_quiz_table(username, first_name, last_name):
     try:
@@ -77,9 +74,9 @@ async def create_quiz_table(username, first_name, last_name):
             cur.close()
         print("Database quiz created successfully!") # For debugging
     except sqlite3.OperationalError:
-        print("Database user hasn't been created yet!") # For debugging
-        await store_user_data(username, first_name, last_name)
-        print("Database user created!") # For debugging
+        # For debugging
+        print("Database user hasn't been created yet!")
+        print("Database user created!") 
             
 async def create_question_table(username, first_name, last_name):
     try:
@@ -98,7 +95,6 @@ async def create_question_table(username, first_name, last_name):
         print("Database question created successfully!") # For debugging
     except sqlite3.OperationalError:
         print("Database user hasn't been created yet!") # For debugging
-        await create_quiz_table(username, first_name, last_name)
         print("Database user created!") # For debugging
         
 # For debugging
