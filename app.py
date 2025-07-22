@@ -29,33 +29,34 @@ async def store_user_data(username, first_name, last_name):
     # Create database and cursor object from the cursor class
     os.makedirs("db", exist_ok=True) # Create folder if it does not exist
     
-    connection = sqlite3.connect('db/incolearn.db', timeout=20)
-    cur = connection.cursor()
-    
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS user(
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            username TEXT UNIQUE NOT NULL, 
-            first_name TEXT NOT NULL, 
-            last_name TEXT NOT NULL    
-        )"""
-    )
-    print("Database user created successfully!") # For debugging purposes
-    # Commit the query and close the connection
-    connection.commit()
-    cur.close()
-    connection.close()
-    
-    # Insert encrypted values if it does not exist yet
-    try:
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
+    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
         cur = connection.cursor()
-        cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
-        print("User inserted successfully!") # For debugging
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user(
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                username TEXT UNIQUE NOT NULL, 
+                first_name TEXT NOT NULL, 
+                last_name TEXT NOT NULL    
+            )"""
+        )
         # Commit the query and close the connection
         connection.commit()
         cur.close()
         connection.close()
+    
+    print("Database user created successfully!") # For debugging purposes
+    
+    # Insert encrypted values if it does not exist yet
+    try:
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            connection = sqlite3.connect("db/incolearn.db", timeout=20)
+            cur = connection.cursor()
+            cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
+            # Commit the query and close the connection
+            connection.commit()
+            cur.close()
+            connection.close()
+        print("User inserted successfully!") # For debugging
  
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
@@ -66,19 +67,19 @@ async def store_user_data(username, first_name, last_name):
 async def create_quiz_table(username, first_name, last_name):
     try:
         # Create a table if there is none yet
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        cur.execute("""
-                    CREATE TABLE IF NOT EXISTS quiz(
-                        quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        quiz_name TEXT UNIQUE NOT NULL,
-                        FOREIGN KEY(user_id) REFERENCES user(user_id))
-                    """)
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("""
+                        CREATE TABLE IF NOT EXISTS quiz(
+                            quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            quiz_name TEXT UNIQUE NOT NULL,
+                            FOREIGN KEY(user_id) REFERENCES user(user_id))
+                        """)
+            connection.commit()
+            cur.close()
+            connection.close()
         print("Database quiz created successfully!") # For debugging
-        connection.commit()
-        cur.close()
-        connection.close()
     except sqlite3.OperationalError:
         print("Database user hasn't been created yet!") # For debugging
         await store_user_data(username, first_name, last_name)
@@ -87,18 +88,18 @@ async def create_quiz_table(username, first_name, last_name):
 async def create_question_table(username, first_name, last_name):
     try:
         # Create a database if it does not exist yet
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        cur.execute("""
-                    CREATE TABLE IF NOT EXISTS question(
-                        question_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        quiz_id INTEGER NOT NULL,
-                        question_text TEXT UNIQUE NOT NULL,
-                        FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id))
-                    """)
-        connection.commit()
-        cur.close()
-        connection.close()
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("""
+                        CREATE TABLE IF NOT EXISTS question(
+                            question_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            quiz_id INTEGER NOT NULL,
+                            question_text TEXT UNIQUE NOT NULL,
+                            FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id))
+                        """)
+            connection.commit()
+            cur.close()
+            connection.close()
         print("Database question created successfully!") # For debugging
     except sqlite3.OperationalError:
         print("Database user hasn't been created yet!") # For debugging
@@ -109,34 +110,34 @@ async def create_question_table(username, first_name, last_name):
 async def display_tables(username, first_name, last_name):
     try:
         # Display user table
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        cur.execute("SELECT * FROM user")
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-        cur.close()
-        connection.close()
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("SELECT * FROM user")
+            rows = cur.fetchall()
+            for row in rows:
+                print(row)
+            cur.close()
+            connection.close()
         
         # Display quiz table
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        cur.execute("SELECT * FROM quiz")
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-        cur.close()
-        connection.close()
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("SELECT * FROM quiz")
+            rows = cur.fetchall()
+            for row in rows:
+                print(row)
+            cur.close()
+            connection.close()
         
         # Display question table
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        cur.execute("SELECT * FROM question")
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-        cur.close()
-        connection.close()
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("SELECT * FROM question")
+            rows = cur.fetchall()
+            for row in rows:
+                print(row)
+            cur.close()
+            connection.close()
     except sqlite3.OperationalError:
         await store_user_data(username, first_name, last_name)
         await create_question_table(username, first_name, last_name)
@@ -199,35 +200,35 @@ async def webhook(req: Request):
 
         # Retrieve user_id
         try:
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
-            cur = connection.cursor()
-            cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
-            user = cur.fetchone()
-            sender_user_id = user[0]
-            cur.close()
-            connection.close()
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
+                user = cur.fetchone()
+                sender_user_id = user[0]
+                cur.close()
+                connection.close()
         except sqlite3.OperationalError:
             print("Database user hasn't been created yet!") # For debugging
             await store_user_data(sender_username, first_name, last_name)
             print("Database user created!") # For debugging
             
             # Perform database transaction
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
-            cur = connection.cursor()
-            cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
-            user = cur.fetchone()
-            sender_user_id = user[0]
-            cur.close()
-            connection.close()
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
+                user = cur.fetchone()
+                sender_user_id = user[0]
+                cur.close()
+                connection.close()
 
         # Insert new quiz to the table
         try:
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
-            cur = connection.cursor()
-            cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
-            connection.commit()
-            cur.close()
-            connection.close()
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
+                connection.commit()
+                cur.close()
+                connection.close()
             bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
         except:
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
@@ -263,37 +264,37 @@ async def webhook(req: Request):
         
         # Retrieve quiz_id
         try:
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
-            cur = connection.cursor()
-            cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
-            quiz = cur.fetchone()
-            quiz_id = quiz[0]
-            cur.close()
-            connection.close()
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
+                quiz = cur.fetchone()
+                quiz_id = quiz[0]
+                cur.close()
+                connection.close()
         except sqlite3.OperationalError:
             print("Database quiz hasn't been created yet!") # For debugging
             await create_quiz_table(username, first_name, last_name)
             print("Database user created!") # For debugging
             
             # Perform database transaction
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
-            cur = connection.cursor()
-            cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
-            quiz = cur.fetchone()
-            quiz_id = quiz[0]
-            cur.close()
-            connection.close()
+            with sqlite3.connect("db/sqlite3.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
+                quiz = cur.fetchone()
+                quiz_id = quiz[0]
+                cur.close()
+                connection.close()
         except TypeError:
             bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
         
         # Insert question to the table
-        connection = sqlite3.connect("db/incolearn.db", timeout=20)
-        cur = connection.cursor()
-        print(question) # For debugging
-        cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
-        connection.commit()
-        cur.close()
-        connection.close()
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            print(question) # For debugging
+            cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
+            connection.commit()
+            cur.close()
+            connection.close()
         
         # For debugging
         await display_tables(username, first_name, last_name)    
