@@ -42,20 +42,17 @@ async def store_user_data(username, first_name, last_name):
         # Commit the query and close the connection
         connection.commit()
         cur.close()
-        connection.close()
     
     print("Database user created successfully!") # For debugging purposes
     
     # Insert encrypted values if it does not exist yet
     try:
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-            connection = sqlite3.connect("db/incolearn.db", timeout=20)
             cur = connection.cursor()
             cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
             # Commit the query and close the connection
             connection.commit()
             cur.close()
-            connection.close()
         print("User inserted successfully!") # For debugging
  
     except sqlite3.IntegrityError:
@@ -78,7 +75,6 @@ async def create_quiz_table(username, first_name, last_name):
                         """)
             connection.commit()
             cur.close()
-            connection.close()
         print("Database quiz created successfully!") # For debugging
     except sqlite3.OperationalError:
         print("Database user hasn't been created yet!") # For debugging
@@ -99,7 +95,6 @@ async def create_question_table(username, first_name, last_name):
                         """)
             connection.commit()
             cur.close()
-            connection.close()
         print("Database question created successfully!") # For debugging
     except sqlite3.OperationalError:
         print("Database user hasn't been created yet!") # For debugging
@@ -117,7 +112,6 @@ async def display_tables(username, first_name, last_name):
             for row in rows:
                 print(row)
             cur.close()
-            connection.close()
         
         # Display quiz table
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -127,7 +121,6 @@ async def display_tables(username, first_name, last_name):
             for row in rows:
                 print(row)
             cur.close()
-            connection.close()
         
         # Display question table
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -137,7 +130,7 @@ async def display_tables(username, first_name, last_name):
             for row in rows:
                 print(row)
             cur.close()
-            connection.close()
+            
     except sqlite3.OperationalError:
         await store_user_data(username, first_name, last_name)
         await create_question_table(username, first_name, last_name)
@@ -206,7 +199,7 @@ async def webhook(req: Request):
                 user = cur.fetchone()
                 sender_user_id = user[0]
                 cur.close()
-                connection.close()
+
         except sqlite3.OperationalError:
             print("Database user hasn't been created yet!") # For debugging
             await store_user_data(sender_username, first_name, last_name)
@@ -219,7 +212,6 @@ async def webhook(req: Request):
                 user = cur.fetchone()
                 sender_user_id = user[0]
                 cur.close()
-                connection.close()
 
         # Insert new quiz to the table
         try:
@@ -228,7 +220,7 @@ async def webhook(req: Request):
                 cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
                 connection.commit()
                 cur.close()
-                connection.close()
+
             bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
         except:
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
@@ -270,7 +262,7 @@ async def webhook(req: Request):
                 quiz = cur.fetchone()
                 quiz_id = quiz[0]
                 cur.close()
-                connection.close()
+
         except sqlite3.OperationalError:
             print("Database quiz hasn't been created yet!") # For debugging
             await create_quiz_table(username, first_name, last_name)
@@ -283,7 +275,7 @@ async def webhook(req: Request):
                 quiz = cur.fetchone()
                 quiz_id = quiz[0]
                 cur.close()
-                connection.close()
+
         except TypeError:
             bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
         
@@ -294,7 +286,6 @@ async def webhook(req: Request):
             cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
             connection.commit()
             cur.close()
-            connection.close()
         
         # For debugging
         await display_tables(username, first_name, last_name)    
