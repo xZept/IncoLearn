@@ -115,7 +115,6 @@ async def display_tables(username, first_name, last_name):
         rows = cur.fetchall()
         for row in rows:
             print(row)
-        connection.commit()
         cur.close()
         connection.close()
         
@@ -205,7 +204,6 @@ async def webhook(req: Request):
             cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
             sender_user_id = user[0]
-            connection.commit()
             cur.close()
             connection.close()
         except sqlite3.OperationalError:
@@ -219,7 +217,6 @@ async def webhook(req: Request):
             cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
             user = cur.fetchone()
             sender_user_id = user[0]
-            connection.commit()
             cur.close()
             connection.close()
 
@@ -262,7 +259,6 @@ async def webhook(req: Request):
         except KeyError:
             return{"ok": False, "error": "No valid message"}
         
-        print(question) # For debugging
         await create_question_table(username, first_name, last_name)
         
         # Retrieve quiz_id
@@ -272,7 +268,6 @@ async def webhook(req: Request):
             cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
             quiz = cur.fetchone()
             quiz_id = quiz[0]
-            connection.commit()
             cur.close()
             connection.close()
         except sqlite3.OperationalError:
@@ -286,7 +281,6 @@ async def webhook(req: Request):
             cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
             quiz = cur.fetchone()
             quiz_id = quiz[0]
-            connection.commit()
             cur.close()
             connection.close()
         except TypeError:
@@ -295,7 +289,8 @@ async def webhook(req: Request):
         # Insert question to the table
         connection = sqlite3.connect("db/incolearn.db", timeout=20)
         cur = connection.cursor()
-        cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question))
+        print(question) # For debugging
+        cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
         connection.commit()
         cur.close()
         connection.close()
