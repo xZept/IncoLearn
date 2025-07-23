@@ -87,7 +87,7 @@ async def create_question_table(username, first_name, last_name):
                         CREATE TABLE IF NOT EXISTS question(
                             question_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             quiz_id INTEGER NOT NULL,
-                            question_text TEXT UNIQUE NOT NULL,
+                            question_text TEXT NOT NULL,
                             FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id))
                         """)
             connection.commit()
@@ -265,7 +265,7 @@ async def webhook(req: Request):
             print("Database user created!") # For debugging
             
             # Perform database transaction
-            with sqlite3.connect("db/sqlite3.db", timeout=20) as connection:
+            with sqlite3.connect("db/sqlite.db", timeout=20) as connection:
                 cur = connection.cursor()
                 cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
                 quiz = cur.fetchone()
@@ -279,11 +279,12 @@ async def webhook(req: Request):
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
             cur = connection.cursor()
             print(question) # For debugging
-            cur.execute("INSERT INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
+            cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
             connection.commit()
             cur.close()
-        
+            
         # For debugging
+        print(question)
         await display_tables(username, first_name, last_name)    
     
     elif text == "/start":
