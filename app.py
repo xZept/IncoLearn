@@ -281,6 +281,8 @@ async def webhook(req: Request):
                 cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
                 connection.commit()
                 cur.close()
+            
+            bot_reply = f"Question added to {quiz_name}!"
                 
             # For debugging
             print(question.replace("/addquestion","").strip())
