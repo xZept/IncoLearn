@@ -16,6 +16,7 @@ import sqlite3
 from telegram import Update
 import os
 import smtplib
+import time
 
 TOKEN = bot_token
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
@@ -249,11 +250,19 @@ async def webhook(req: Request):
             # Receive the message form the user and store it
             try:
                 chat_id = data['message']['chat']['id']
-                question = data['message']['text'].replace("/addquestion","").strip()
+                question = data['message']['text'].strip()
             except KeyError:
                 return{"ok": False, "error": "No valid message"}
             
-            if question.strip():
+            # Give the user 5 minutes to send the quiz
+            for i in range(180):
+                if question is None:
+                    time.sleep(1)
+                else: 
+                    message_sent = True
+                    break
+                
+            if question.strip() and message_sent == True:
                 await create_question_table(username, first_name, last_name)
                 
                 # Retrieve quiz_id
@@ -297,7 +306,8 @@ async def webhook(req: Request):
                     print("Database quiz hasn't been created yet!") # For debugging
                     await create_quiz_table(username, first_name, last_name)
             else:
-                bot_reply = "Question cannot be blank. Please try again and enter a valid question."
+                bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
+                print("User took too long to respond.")
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
             
