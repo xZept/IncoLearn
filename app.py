@@ -263,16 +263,7 @@ async def webhook(req: Request):
 
         except sqlite3.OperationalError:
             print("Database quiz hasn't been created yet!") # For debugging
-            await create_quiz_table(username, first_name, last_name)
-            print("Database user created!") # For debugging
-            
-            # Perform database transaction
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
-                quiz = cur.fetchone()
-                quiz_id = quiz[0]
-                cur.close()
+            bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
 
         except TypeError:
             bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
