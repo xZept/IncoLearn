@@ -267,7 +267,7 @@ async def webhook(req: Request):
             print("Database user created!") # For debugging
             
             # Perform database transaction
-            with sqlite3.connect("db/sqlite.db", timeout=20) as connection:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
                 cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
                 quiz = cur.fetchone()
