@@ -236,19 +236,6 @@ async def webhook(req: Request):
         # Store quiz name
         quiz_name = text.replace("/addquestion", "").strip()
         print(quiz_name) # For debugging
-        # Prompt the user for the question
-        bot_prompt = "Enter the question."
-        await client.get(
-            f"{BASE_URL}/sendMessage",
-            params={"chat_id": chat_id, "text": bot_prompt}
-        )
-        
-        # Receive the message form the user and store it
-        try:
-            chat_id = data['message']['chat']['id']
-            question = data['message']['text'].strip()
-        except KeyError:
-            return{"ok": False, "error": "No valid message"}
         
         await create_question_table(username, first_name, last_name)
         
@@ -274,6 +261,18 @@ async def webhook(req: Request):
             await create_quiz_table(username, first_name, last_name)
         
         try:
+            # Receive the message form the user and store it
+            bot_prompt = "Enter the question."
+            await client.get(
+                f"{BASE_URL}/sendMessage",
+                params={"chat_id": chat_id, "text": bot_prompt}
+            )
+            try:
+                chat_id = data['message']['chat']['id']
+                question = data['message']['text'].strip()
+            except KeyError:
+                return{"ok": False, "error": "No valid message"}
+            
             # Insert question to the table
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
@@ -285,7 +284,7 @@ async def webhook(req: Request):
             bot_reply = f"Question added to {quiz_name}!"
                 
             # For debugging
-            print(question.replace("/addquestion","").strip())
+            print(question)
             await display_tables(username, first_name, last_name)   
             
         except UnboundLocalError: 
