@@ -76,8 +76,8 @@ async def create_quiz_table(username, first_name, last_name):
     except sqlite3.OperationalError:
         # For debugging
         print("Database user hasn't been created yet!")
-        store_user_data(username, first_name, last_name)
-        create_quiz_table(username, first_name, last_name)
+        await store_user_data(username, first_name, last_name)
+        await create_quiz_table(username, first_name, last_name)
             
 async def create_question_table(username, first_name, last_name):
     try:
@@ -96,8 +96,8 @@ async def create_question_table(username, first_name, last_name):
         print("Database question created successfully!") # For debugging
     except sqlite3.OperationalError:
         print("Database quiz hasn't been created yet!") # For debugging
-        create_quiz_table(username, first_name, last_name)
-        create_question_table(username, first_name, last_name)
+        await create_quiz_table(username, first_name, last_name)
+        await create_question_table(username, first_name, last_name)
 
 # For debugging
 async def display_tables(username, first_name, last_name):
@@ -276,6 +276,11 @@ async def webhook(req: Request):
 
         except TypeError:
             bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+            
+        except UnboundLocalError:
+            bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+            print("Database quiz hasn't been created yet!") # For debugging
+            await create_quiz_table(username, first_name, last_name)
         
         # Insert question to the table
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
