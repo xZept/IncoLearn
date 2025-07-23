@@ -273,17 +273,23 @@ async def webhook(req: Request):
             print("Database quiz hasn't been created yet!") # For debugging
             await create_quiz_table(username, first_name, last_name)
         
-        # Insert question to the table
-        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-            cur = connection.cursor()
-            print(question) # For debugging
-            cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
-            connection.commit()
-            cur.close()
+        try:
+            # Insert question to the table
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                print(question) # For debugging
+                cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
+                connection.commit()
+                cur.close()
+                
+            # For debugging
+            print(question.replace("/addquestion","").strip())
+            await display_tables(username, first_name, last_name)   
             
-        # For debugging
-        print(question.replace("/addquestion","").strip())
-        await display_tables(username, first_name, last_name)    
+        except UnboundLocalError: 
+            bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+            print("Database quiz hasn't been created yet!") # For debugging
+            await create_quiz_table(username, first_name, last_name)
     
     elif text == "/start":
         # Obtain user data then store it using a function
