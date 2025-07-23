@@ -76,7 +76,8 @@ async def create_quiz_table(username, first_name, last_name):
     except sqlite3.OperationalError:
         # For debugging
         print("Database user hasn't been created yet!")
-        print("Database user created!") 
+        store_user_data(username, first_name, last_name)
+        create_quiz_table(username, first_name, last_name)
             
 async def create_question_table(username, first_name, last_name):
     try:
@@ -94,9 +95,10 @@ async def create_question_table(username, first_name, last_name):
             cur.close()
         print("Database question created successfully!") # For debugging
     except sqlite3.OperationalError:
-        print("Database user hasn't been created yet!") # For debugging
-        print("Database user created!") # For debugging
-        
+        print("Database quiz hasn't been created yet!") # For debugging
+        create_quiz_table(username, first_name, last_name)
+        create_question_table(username, first_name, last_name)
+
 # For debugging
 async def display_tables(username, first_name, last_name):
     try:
@@ -284,7 +286,7 @@ async def webhook(req: Request):
             cur.close()
             
         # For debugging
-        print(question)
+        print(question.replace("/addquestion","").strip())
         await display_tables(username, first_name, last_name)    
     
     elif text == "/start":
