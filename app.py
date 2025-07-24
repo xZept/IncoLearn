@@ -25,6 +25,9 @@ client = httpx.AsyncClient()
 
 app = FastAPI()    
 
+# Global variable for setting the user state
+user_states = {}
+
 # Store user information asynchronously
 async def store_user_data(username, first_name, last_name):
     # Create database and cursor object from the cursor class
@@ -176,6 +179,64 @@ async def webhook(req: Request):
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
         /feedback <message> - Send feedback about the bot to the developer.
         """
+    
+    elif user_states.get(chat_id) == "awaiting_response":
+        # Receive the message form the user and store it
+        try:
+            chat_id = data['message']['chat']['id']
+            question = data['message']['text'].strip()
+        except KeyError:
+            return{"ok": False, "error": "No valid message"}
+            
+        # Reset user state
+        del user_states[chat_id]
+
+        if question.strip():
+            await create_question_table(username, first_name, last_name)
+            
+            # Retrieve quiz_id
+            try:
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
+                    quiz = cur.fetchone()
+                    quiz_id = quiz[0]
+                    cur.close()
+
+            except sqlite3.OperationalError:
+                print("Database quiz hasn't been created yet!") # For debugging
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+
+            except TypeError:
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                
+            except UnboundLocalError:
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Database quiz hasn't been created yet!") # For debugging
+                await create_quiz_table(username, first_name, last_name)
+            
+            try:
+                # Insert question to the table
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    print(question) # For debugging
+                    cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
+                    connection.commit()
+                    cur.close()
+                
+                bot_reply = f"Question added to {quiz_name}!"
+                    
+                # For debugging
+                print(question)
+                await display_tables(username, first_name, last_name)   
+                
+            except UnboundLocalError: 
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Database quiz hasn't been created yet!") # For debugging
+                await create_quiz_table(username, first_name, last_name)
+            else:
+                bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
+                print("User took too long to respond.")
         
     elif text.startswith("/newquiz"):
         # Obtain user information
@@ -240,74 +301,17 @@ async def webhook(req: Request):
             first_name = from_user.get("first_name") or "Not provided"
             last_name = from_user.get("last_name") or "Not provided"
             
+            # Set user state
+            chat_id = data['message']['chat']['id']
+            user_states[chat_id] = "awaiting_response"
+            
             # Prompt the user for the question
-            bot_prompt = "Enter the question."
+            bot_prompt = "Enter the question within 5 minutes."
             await client.get(
                 f"{BASE_URL}/sendMessage",
                 params={"chat_id": chat_id, "text": bot_prompt}
             )
             
-            # Receive the message form the user and store it
-            try:
-                chat_id = data['message']['chat']['id']
-                question = data['message']['text'].strip()
-            except KeyError:
-                return{"ok": False, "error": "No valid message"}
-            
-            # Give the user 5 minutes to send the quiz
-            for i in range(180):
-                if question is None:
-                    time.sleep(1)
-                else: 
-                    message_sent = True
-                    break
-                
-            if question.strip() and message_sent == True:
-                await create_question_table(username, first_name, last_name)
-                
-                # Retrieve quiz_id
-                try:
-                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                        cur = connection.cursor()
-                        cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
-                        quiz = cur.fetchone()
-                        quiz_id = quiz[0]
-                        cur.close()
-
-                except sqlite3.OperationalError:
-                    print("Database quiz hasn't been created yet!") # For debugging
-                    bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
-
-                except TypeError:
-                    bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
-                    
-                except UnboundLocalError:
-                    bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
-                    print("Database quiz hasn't been created yet!") # For debugging
-                    await create_quiz_table(username, first_name, last_name)
-                
-                try:
-                    # Insert question to the table
-                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                        cur = connection.cursor()
-                        print(question) # For debugging
-                        cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
-                        connection.commit()
-                        cur.close()
-                    
-                    bot_reply = f"Question added to {quiz_name}!"
-                        
-                    # For debugging
-                    print(question)
-                    await display_tables(username, first_name, last_name)   
-                    
-                except UnboundLocalError: 
-                    bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
-                    print("Database quiz hasn't been created yet!") # For debugging
-                    await create_quiz_table(username, first_name, last_name)
-            else:
-                bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
-                print("User took too long to respond.")
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
             
