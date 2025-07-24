@@ -192,6 +192,9 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "awaiting_response":
         # Obtain user information
         from_user = data["message"]["from"]
+        # Store quiz name
+        quiz_name = text.replace("/addquestion", "").strip()
+        print(quiz_name) # For debugging
         
         # Receive the message form the user and store it
         try:
