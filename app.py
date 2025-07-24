@@ -98,10 +98,9 @@ async def create_question_table(username, first_name, last_name):
             connection.commit()
             cur.close()
         print("Database question created successfully!") # For debugging
-    except sqlite3.OperationalError:
-        print("Database quiz hasn't been created yet!") # For debugging
-        await create_quiz_table(username, first_name, last_name)
-        await create_question_table(username, first_name, last_name)
+    except sqlite3.OperationalError as error:
+        print("Database quiz hasn't been created yet! Error message: ", error) # For debugging
+        pass
 
 # For debugging
 async def display_tables(username, first_name, last_name):
@@ -133,10 +132,9 @@ async def display_tables(username, first_name, last_name):
                 print(row)
             cur.close()
             
-    except sqlite3.OperationalError:
-        await store_user_data(username, first_name, last_name)
-        await create_question_table(username, first_name, last_name)
-        await create_quiz_table(username, first_name, last_name)
+    except sqlite3.OperationalError as error:
+        print("Database table hasn't been created yet. Error message: ", error)
+        pass
         
 @app.get("/")
 async def root():
@@ -161,6 +159,17 @@ async def webhook(req: Request):
         text = data['message']['text'].strip().lower()
     except KeyError:
         return{"ok": False, "error": "No valid message"}
+    
+    # For debugging
+    print(text)
+    
+    # Get user information
+    username = from_user.get("username") or "Not set"
+    first_name = from_user.get("first_name") or "Not provided"
+    last_name = from_user.get("last_name") or "Not provided"
+    
+    # For debugging 
+    display_tables(username, first_name, last_name)
 
     # Strip unecessary spaces and make it case-insensitive
     text = text.strip().lower()
@@ -183,9 +192,6 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "awaiting_response":
         # Obtain user information
         from_user = data["message"]["from"]
-        username = from_user.get("username") or "Not set"
-        first_name = from_user.get("first_name") or "Not provided"
-        last_name = from_user.get("last_name") or "Not provided"
         
         # Receive the message form the user and store it
         try:
@@ -247,12 +253,9 @@ async def webhook(req: Request):
     elif text.startswith("/newquiz"):
         # Obtain user information
         from_user = data["message"]["from"]
-        sender_username = from_user.get("username") or "Not set"
-        first_name = from_user.get("first_name") or "Not provided"
-        last_name = from_user.get("last_name") or "Not provided"
         
         # Create a table if there is none yet
-        await create_quiz_table(sender_username, first_name, last_name)
+        await create_quiz_table(username, first_name, last_name)
         
         quiz_name = text.replace("/newquiz","").strip()
         print("Quiz name: ", quiz_name) # For debugging
@@ -261,20 +264,20 @@ async def webhook(req: Request):
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
+                cur.execute("SELECT * FROM user WHERE username=?", [username])
                 user = cur.fetchone()
                 sender_user_id = user[0]
                 cur.close()
 
         except sqlite3.OperationalError:
             print("Database user hasn't been created yet!") # For debugging
-            await store_user_data(sender_username, first_name, last_name)
+            await store_user_data(username, first_name, last_name)
             print("Database user created!") # For debugging
             
             # Perform database transaction
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT * FROM user WHERE username=?", [sender_username])
+                cur.execute("SELECT * FROM user WHERE username=?", [username])
                 user = cur.fetchone()
                 sender_user_id = user[0]
                 cur.close()
@@ -292,7 +295,7 @@ async def webhook(req: Request):
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
         
         #For debugging
-        await display_tables(sender_username, first_name, last_name)
+        await display_tables(username, first_name, last_name)
         
     elif text.startswith("/addquestion"):
         # Store quiz name
@@ -325,13 +328,13 @@ async def webhook(req: Request):
         
     elif text.startswith("/feedback"):
         from_user = data["message"]["from"]
-        sender_username = from_user.get("username") or "Not set"
+        username = from_user.get("username") or "Not set"
         
         # Send an e-mail
         s = smtplib.SMTP('smtp.gmail.com', 587)
         s.starttls()
         s.login("allenjames.laxamana03@gmail.com", "wercpudbvmtjhewo")
-        message = f"IncoLearn user feedback from username: {sender_username}\n\n{text.replace('/feedback', '').strip()}"
+        message = f"IncoLearn user feedback from username: {username}\n\n{text.replace('/feedback', '').strip()}"
         print(message) # For debugging
         s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
         s.quit()
