@@ -181,6 +181,12 @@ async def webhook(req: Request):
         """
     
     elif user_states.get(chat_id) == "awaiting_response":
+        # Obtain user information
+        from_user = data["message"]["from"]
+        username = from_user.get("username") or "Not set"
+        first_name = from_user.get("first_name") or "Not provided"
+        last_name = from_user.get("last_name") or "Not provided"
+        
         # Receive the message form the user and store it
         try:
             chat_id = data['message']['chat']['id']
@@ -295,22 +301,11 @@ async def webhook(req: Request):
         
         # Check if string is not empty
         if quiz_name.strip():
-            # Obtain user information
-            from_user = data["message"]["from"]
-            username = from_user.get("username") or "Not set"
-            first_name = from_user.get("first_name") or "Not provided"
-            last_name = from_user.get("last_name") or "Not provided"
-            
             # Set user state
             chat_id = data['message']['chat']['id']
             user_states[chat_id] = "awaiting_response"
             
-            # Prompt the user for the question
-            bot_prompt = "Enter the question within 5 minutes."
-            await client.get(
-                f"{BASE_URL}/sendMessage",
-                params={"chat_id": chat_id, "text": bot_prompt}
-            )
+            bot_reply = "Please enter the question within 5 minutes."
             
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
