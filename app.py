@@ -164,6 +164,8 @@ async def webhook(req: Request):
     print(text)
     
     # Get user information
+    # Obtain user information
+    from_user = data["message"]["from"]
     username = from_user.get("username") or "Not set"
     first_name = from_user.get("first_name") or "Not provided"
     last_name = from_user.get("last_name") or "Not provided"
@@ -190,8 +192,6 @@ async def webhook(req: Request):
         """
     
     elif user_states.get(chat_id) == "awaiting_response":
-        # Obtain user information
-        from_user = data["message"]["from"]
         # Store quiz name
         quiz_name = text.replace("/addquestion", "").strip()
         print(quiz_name) # For debugging
