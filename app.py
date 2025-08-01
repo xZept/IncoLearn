@@ -104,7 +104,7 @@ async def create_question_table(username, first_name, last_name):
         pass
 
 # For debugging
-async def display_tables(username, first_name, last_name):
+async def display_tables():
     try:
         # Display user table
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -172,7 +172,7 @@ async def webhook(req: Request):
     last_name = from_user.get("last_name") or "Not provided"
     
     # For debugging 
-    display_tables(username, first_name, last_name)
+    display_tables()
 
     # Strip unecessary spaces and make it case-insensitive
     text = text.strip().lower()
@@ -218,6 +218,7 @@ async def webhook(req: Request):
                     quiz = cur.fetchone()
                     quiz_id = quiz[0]
                     cur.close()
+                    print("Quiz id retrieved!")
 
             except sqlite3.OperationalError as e:
                 print("Database quiz hasn't been created yet!") # For debugging
@@ -247,7 +248,7 @@ async def webhook(req: Request):
                     
                 # For debugging
                 print(question)
-                await display_tables(username, first_name, last_name)   
+                await display_tables()   
                 
             except UnboundLocalError: 
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
@@ -302,7 +303,7 @@ async def webhook(req: Request):
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
         
         #For debugging
-        await display_tables(username, first_name, last_name)
+        await display_tables()
         
     elif text.startswith("/addquestion"):
         # Store quiz name
