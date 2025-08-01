@@ -250,9 +250,10 @@ async def webhook(req: Request):
                 print(question)
                 await display_tables()   
                 
-            except UnboundLocalError: 
+            except UnboundLocalError as e: 
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Database quiz hasn't been created yet!") # For debugging
+                print("Error: ", e)
                 await create_quiz_table(username, first_name, last_name)
         else:
             bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
@@ -316,13 +317,13 @@ async def webhook(req: Request):
             chat_id = data['message']['chat']['id']
             user_states[chat_id] = "awaiting_response"
             
+            # Update target quiz for user    
+            target_quiz[chat_id] = quiz_name
+            
             bot_reply = "Please enter the question within 5 minutes."
             
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
-        
-        # Update target quiz for user    
-        target_quiz[chat_id] = quiz_name
         
     elif text == "/start":
         # Obtain user data then store it using a function
