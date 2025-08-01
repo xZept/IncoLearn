@@ -25,8 +25,9 @@ client = httpx.AsyncClient()
 
 app = FastAPI()    
 
-# Global variable for setting the user state
+# Global variables
 user_states = {}
+target_quiz = {}
 
 # Store user information asynchronously
 async def store_user_data(username, first_name, last_name):
@@ -191,42 +192,45 @@ async def webhook(req: Request):
         /feedback <message> - Send feedback about the bot to the developer.
         """
     
-    elif user_states.get(chat_id) == "awaiting_response":
-        # Store quiz name
-        quiz_name = text.replace("/addquestion", "").strip()
-        print(quiz_name) # For debugging
-        
+    elif user_states.get(chat_id) == "awaiting_response":        
         # Receive the message form the user and store it
         try:
             chat_id = data['message']['chat']['id']
-            question = data['message']['text'].strip()
+            text = data['message']['text'].strip()
         except KeyError:
             return{"ok": False, "error": "No valid message"}
-            
+        
+        # Store quiz name and question
+        print(target_quiz[chat_id]) # For debugging
+        question = text
+        
         # Reset user state
         del user_states[chat_id]
 
-        if question.strip():
+        if text.strip():
             await create_question_table(username, first_name, last_name)
             
             # Retrieve quiz_id
             try:
                 with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                     cur = connection.cursor()
-                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [quiz_name])
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target_quiz[chat_id]])
                     quiz = cur.fetchone()
                     quiz_id = quiz[0]
                     cur.close()
 
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as e:
                 print("Database quiz hasn't been created yet!") # For debugging
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
 
-            except TypeError:
+            except TypeError as e:
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
                 
-            except UnboundLocalError:
+            except UnboundLocalError as e:
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
                 print("Database quiz hasn't been created yet!") # For debugging
                 await create_quiz_table(username, first_name, last_name)
             
@@ -249,9 +253,9 @@ async def webhook(req: Request):
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Database quiz hasn't been created yet!") # For debugging
                 await create_quiz_table(username, first_name, last_name)
-            else:
-                bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
-                print("User took too long to respond.")
+        else:
+            bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
+            print("User took too long to respond.")
         
     elif text.startswith("/newquiz"):
         # Obtain user information
@@ -315,7 +319,10 @@ async def webhook(req: Request):
             
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
-            
+        
+        # Update target quiz for user    
+        target_quiz[chat_id] = quiz_name
+        
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
