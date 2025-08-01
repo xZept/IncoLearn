@@ -244,7 +244,8 @@ async def webhook(req: Request):
                     connection.commit()
                     cur.close()
                 
-                bot_reply = f"Question added to {quiz_name}!"
+                bot_reply = f"Question added to {target_quiz[chat_id]}!"
+                del target_quiz[chat_id]
                     
                 # For debugging
                 print(question)
