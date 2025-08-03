@@ -318,7 +318,7 @@ async def webhook(req: Request):
             # Check if quiz exists  
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", (quiz_name))
+                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", (quiz_name,))
                 quiz = cur.fetchall()
                 cur.close()
         
