@@ -315,13 +315,6 @@ async def webhook(req: Request):
         
         # Check if string is not empty
         if quiz_name.strip():
-            # Set user state
-            chat_id = data['message']['chat']['id']
-            user_states[chat_id] = "awaiting_response"
-            
-            # Update target quiz for user    
-            target_quiz[chat_id] = quiz_name
-            
             # Check if quiz exists  
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
@@ -333,6 +326,12 @@ async def webhook(req: Request):
                 bot_reply = "Quiz does not exist!"
             else:
                 bot_reply = "Please enter the question within 5 minutes."
+                # Set user state
+                chat_id = data['message']['chat']['id']
+                user_states[chat_id] = "awaiting_response"
+                
+                # Update target quiz for user    
+                target_quiz[chat_id] = quiz_name
             
         else:
             bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
