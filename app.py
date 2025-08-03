@@ -16,7 +16,7 @@ import sqlite3
 from telegram import Update
 import os
 import smtplib
-import time
+import io
 
 TOKEN = bot_token
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
@@ -192,6 +192,23 @@ async def webhook(req: Request):
         /feedback <message> - Send feedback about the bot to the developer.
         """
     
+    elif text == "/viewquizzes":
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("SELECT quiz_name FROM quiz")
+            quiz_names = cur.fetchall()
+            
+            if len(quiz_names) == 0:
+                bot_reply = "There are no saved quizzes! Create one by using /newquiz <quiz name>."
+                
+            else:
+                builder = io.StringIO()
+                builder.write("Here are your saved quizzes:")
+                for quiz_name in quiz_names:
+                    builder.write("\n", quiz_name)
+                bot_reply = builder.getvalue()
+            cur.close()
+        
     elif user_states.get(chat_id) == "awaiting_response":        
         # Receive the message form the user and store it
         try:
