@@ -193,24 +193,24 @@ async def webhook(req: Request):
         """
     
     elif text == "/viewquizzes":
-        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-            cur = connection.cursor()
-            cur.execute("SELECT quiz_name FROM quiz")
-            quiz_names = cur.fetchall()
-            
-            try:
-                if len(quiz_names) == 0:
-                    bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
-                    
-                else:
-                    builder = io.StringIO()
-                    builder.write("Here are your saved quizzes:")
-                    for quiz_name in quiz_names:
-                        builder.write("\n", quiz_name)
-                    bot_reply = builder.getvalue()
-                cur.close()
-            except sqlite3.OperationalError:
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT quiz_name FROM quiz")
+                quiz_names = cur.fetchall()
+                
+            if len(quiz_names) == 0:
                 bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
+                
+            else:
+                builder = io.StringIO()
+                builder.write("Here are your saved quizzes:")
+                for quiz_name in quiz_names:
+                    builder.write("\n", quiz_name)
+                bot_reply = builder.getvalue()
+            cur.close()
+        except sqlite3.OperationalError:
+            bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
                 
         
     elif user_states.get(chat_id) == "awaiting_response":        
