@@ -216,10 +216,10 @@ async def webhook(req: Request):
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[0], quiz_names[1], chat_id))
+                cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[1], quiz_names[0], chat_id))
                 connection.commit()
                 cur.close()
-                print("Quiz ", quiz[0], "changed to ", quiz[1])
+                print("Quiz ", quiz[0], "renamed to ", quiz[1])
                 
             bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
         except UnboundLocalError as error:
