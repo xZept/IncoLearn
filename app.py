@@ -78,11 +78,11 @@ async def create_quiz_table(chat_id, username, first_name, last_name):
             connection.commit()
             cur.close()
         print("Database quiz created successfully!") # For debugging
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as error:
         # For debugging
         print("Database user hasn't been created yet!")
-        await store_user_data(chat_id, username, first_name, last_name)
-        await create_quiz_table(chat_id, username, first_name, last_name)
+        print("Database user hasn't been created yet! Error message: ", error) # For debugging
+        pass
             
 async def create_question_table():
     try:
