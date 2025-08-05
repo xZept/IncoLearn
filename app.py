@@ -214,7 +214,12 @@ async def webhook(req: Request):
         
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
             cur = connection.cursor()
-            cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_name[0], quiz_name[1], ))
+            cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_name[0], quiz_name[1], chat_id))
+            connection.commit()
+            cur.close()
+            print("Quiz ", quiz[0], "changed to ", quiz[1])
+            
+        bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
         
         
     elif user_states.get(chat_id) == "awaiting_response":        
