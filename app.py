@@ -30,7 +30,7 @@ user_states = {}
 target_quiz = {}
 
 # Store user information asynchronously
-async def store_user_data(username, first_name, last_name):
+async def store_user_data(chat_id, username, first_name, last_name):
     # Create database and cursor object from the cursor class
     os.makedirs("db", exist_ok=True) # Create folder if it does not exist
     
@@ -38,7 +38,7 @@ async def store_user_data(username, first_name, last_name):
         cur = connection.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS user(
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                user_id INTEGER PRIMARY KEY, 
                 username TEXT UNIQUE NOT NULL, 
                 first_name TEXT NOT NULL, 
                 last_name TEXT NOT NULL    
@@ -54,7 +54,7 @@ async def store_user_data(username, first_name, last_name):
     try:
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
             cur = connection.cursor()
-            cur.execute("INSERT INTO user (username, first_name, last_name) VALUES(?, ?, ?)", (username, first_name, last_name))
+            cur.execute("INSERT INTO user (user_id, username, first_name, last_name) VALUES(?, ?, ?)", (chat_id, username, first_name, last_name))
             # Commit the query and close the connection
             connection.commit()
             cur.close()
@@ -63,7 +63,7 @@ async def store_user_data(username, first_name, last_name):
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
     
-async def create_quiz_table(username, first_name, last_name):
+async def create_quiz_table():
     try:
         # Create a table if there is none yet
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -79,12 +79,18 @@ async def create_quiz_table(username, first_name, last_name):
             cur.close()
         print("Database quiz created successfully!") # For debugging
     except sqlite3.OperationalError:
+        # Obtain user data then store it using a function
+        from_user = data["message"]["from"]
+        chat_id = data['message']['chat']['id']
+        username = from_user.get("username") or "Not set"
+        first_name = from_user.get("first_name") or "Not provided"
+        last_name = from_user.get("last_name") or "Not provided"
         # For debugging
         print("Database user hasn't been created yet!")
-        await store_user_data(username, first_name, last_name)
-        await create_quiz_table(username, first_name, last_name)
+        await store_user_data(chat_id, username, first_name, last_name)
+        await create_quiz_table()
             
-async def create_question_table(username, first_name, last_name):
+async def create_question_table():
     try:
         # Create a database if it does not exist yet
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -163,14 +169,6 @@ async def webhook(req: Request):
     
     # For debugging
     print(text)
-    
-    # Get user information
-    # Obtain user information
-    from_user = data["message"]["from"]
-    username = from_user.get("username") or "Not set"
-    first_name = from_user.get("first_name") or "Not provided"
-    last_name = from_user.get("last_name") or "Not provided"
-    
     # For debugging 
     display_tables()
 
@@ -213,6 +211,18 @@ async def webhook(req: Request):
         except sqlite3.OperationalError:
             bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
                 
+    elif text.startswith("/editquiz"):
+        chat_id = data['message']['chat']['id']
+        text = data['message']['text'].strip()
+        
+        # Obtain quiz names from the user's message and store them in a list
+        extracted_quiz_names = text.replace("/editquiz", "")
+        quiz_names = extracted_quiz_names.split()
+        
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_name[0], quiz_name[1], ))
+        
         
     elif user_states.get(chat_id) == "awaiting_response":        
         # Receive the message form the user and store it
@@ -230,7 +240,7 @@ async def webhook(req: Request):
         del user_states[chat_id]
 
         if text.strip():
-            await create_question_table(username, first_name, last_name)
+            await create_question_table()
             
             # Retrieve quiz_id
             try:
@@ -255,7 +265,7 @@ async def webhook(req: Request):
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Error message: ", e)
                 print("Database quiz hasn't been created yet!") # For debugging
-                await create_quiz_table(username, first_name, last_name)
+                await create_quiz_table()
             
             try:
                 # Insert question to the table
@@ -277,7 +287,7 @@ async def webhook(req: Request):
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Database quiz hasn't been created yet!") # For debugging
                 print("Error: ", e)
-                await create_quiz_table(username, first_name, last_name)
+                await create_quiz_table()
         else:
             bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
             print("User took too long to respond.")
@@ -287,7 +297,7 @@ async def webhook(req: Request):
         from_user = data["message"]["from"]
         
         # Create a table if there is none yet
-        await create_quiz_table(username, first_name, last_name)
+        await create_quiz_table()
         
         quiz_name = text.replace("/newquiz","").strip()
         print("Quiz name: ", quiz_name) # For debugging
@@ -361,11 +371,12 @@ async def webhook(req: Request):
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
+        chat_id = data['message']['chat']['id']
         username = from_user.get("username") or "Not set"
         first_name = from_user.get("first_name") or "Not provided"
         last_name = from_user.get("last_name") or "Not provided"
-        print(username, first_name, last_name) # For debugging
-        await store_user_data(username, first_name, last_name)
+        print(chat_id, username, first_name, last_name) # For debugging
+        await store_user_data(chat_id, username, first_name, last_name)
         
         bot_reply = """
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
