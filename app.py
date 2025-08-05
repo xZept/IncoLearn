@@ -288,6 +288,7 @@ async def webhook(req: Request):
     elif text.startswith("/newquiz"):
         # Obtain user information
         from_user = data["message"]["from"]
+        chat_id = data['message']['chat']['id']
         
         # Create a table if there is none yet
         await create_quiz_table()
@@ -295,33 +296,11 @@ async def webhook(req: Request):
         quiz_name = text.replace("/newquiz","").strip()
         print("Quiz name: ", quiz_name) # For debugging
 
-        # Retrieve user_id
-        try:
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                cur.execute("SELECT * FROM user WHERE username=?", [username])
-                user = cur.fetchone()
-                sender_user_id = user[0]
-                cur.close()
-
-        except sqlite3.OperationalError:
-            print("Database user hasn't been created yet!") # For debugging
-            await store_user_data(chat_id, username, first_name, last_name)
-            print("Database user created!") # For debugging
-            
-            # Perform database transaction
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                cur.execute("SELECT * FROM user WHERE username=?", [username])
-                user = cur.fetchone()
-                sender_user_id = user[0]
-                cur.close()
-
         # Insert new quiz to the table
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, sender_user_id))
+                cur.execute("INSERT INTO quiz (quiz_name, user_id) VALUES(?,?)", (quiz_name, chat_id))
                 connection.commit()
                 cur.close()
 
