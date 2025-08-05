@@ -213,21 +213,25 @@ async def webhook(req: Request):
         quiz_names = extracted_quiz_names.split()
         print(quiz_names)
         
-        try:
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[1], quiz_names[0], chat_id))
-                connection.commit()
-                cur.close()
-                print("Quiz ", quiz[0], "renamed to ", quiz[1])
-                
-            bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
-        except UnboundLocalError as error:
-            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
-            print(error)
-        except sqlite3.OperationalError as error:
-            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
-            print(error)
+        if len(quiz_names) == 2:
+            try:
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[1], quiz_names[0], chat_id))
+                    connection.commit()
+                    cur.close()
+                    print("Old quiz name: ", quiz[0])
+                    print("New quiz name: ", quiz[1])
+                    
+                bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
+            except UnboundLocalError as error:
+                bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+                print(error)
+            except sqlite3.OperationalError as error:
+                bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+                print(error)
+        else:
+            bot_reply = "Invalid input. Make sure to follow this format /editquiz <old quiz name> <new quiz name>."
         
         
     elif text.startswith("/deletequiz"):
