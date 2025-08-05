@@ -208,7 +208,7 @@ async def webhook(req: Request):
         chat_id = data['message']['chat']['id']
         
         # Obtain quiz names from the user's message and store them in a list
-        extracted_quiz_names = text.replace("/editquiz", "").strip
+        extracted_quiz_names = text.replace("/editquiz", "").strip()
         print("Extracted quiz names: ", extracted_quiz_names)
         quiz_names = extracted_quiz_names.split()
         print(quiz_names)
