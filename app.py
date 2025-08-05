@@ -54,7 +54,7 @@ async def store_user_data(chat_id, username, first_name, last_name):
     try:
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
             cur = connection.cursor()
-            cur.execute("INSERT INTO user (user_id, username, first_name, last_name) VALUES(?, ?, ?)", (chat_id, username, first_name, last_name))
+            cur.execute("INSERT INTO user (user_id, username, first_name, last_name) VALUES(?, ?, ?, ?)", (chat_id, username, first_name, last_name))
             # Commit the query and close the connection
             connection.commit()
             cur.close()
@@ -63,7 +63,7 @@ async def store_user_data(chat_id, username, first_name, last_name):
     except sqlite3.IntegrityError:
         print("User already exists. Skipping insertion.")
     
-async def create_quiz_table():
+async def create_quiz_table(chat_id, username, first_name, last_name):
     try:
         # Create a table if there is none yet
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
@@ -79,16 +79,10 @@ async def create_quiz_table():
             cur.close()
         print("Database quiz created successfully!") # For debugging
     except sqlite3.OperationalError:
-        # Obtain user data then store it using a function
-        from_user = data["message"]["from"]
-        chat_id = data['message']['chat']['id']
-        username = from_user.get("username") or "Not set"
-        first_name = from_user.get("first_name") or "Not provided"
-        last_name = from_user.get("last_name") or "Not provided"
         # For debugging
         print("Database user hasn't been created yet!")
         await store_user_data(chat_id, username, first_name, last_name)
-        await create_quiz_table()
+        await create_quiz_table(chat_id, username, first_name, last_name)
             
 async def create_question_table():
     try:
@@ -265,7 +259,7 @@ async def webhook(req: Request):
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Error message: ", e)
                 print("Database quiz hasn't been created yet!") # For debugging
-                await create_quiz_table()
+                await create_quiz_table(chat_id, username, first_name, last_name)
             
             try:
                 # Insert question to the table
@@ -287,7 +281,7 @@ async def webhook(req: Request):
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
                 print("Database quiz hasn't been created yet!") # For debugging
                 print("Error: ", e)
-                await create_quiz_table()
+                await create_quiz_table(chat_id, username, first_name, last_name)
         else:
             bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
             print("User took too long to respond.")
@@ -297,7 +291,7 @@ async def webhook(req: Request):
         from_user = data["message"]["from"]
         
         # Create a table if there is none yet
-        await create_quiz_table()
+        await create_quiz_table(chat_id, username, first_name, last_name)
         
         quiz_name = text.replace("/newquiz","").strip()
         print("Quiz name: ", quiz_name) # For debugging
@@ -313,7 +307,7 @@ async def webhook(req: Request):
 
         except sqlite3.OperationalError:
             print("Database user hasn't been created yet!") # For debugging
-            await store_user_data(username, first_name, last_name)
+            await store_user_data(chat_id, username, first_name, last_name)
             print("Database user created!") # For debugging
             
             # Perform database transaction
