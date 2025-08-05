@@ -222,11 +222,34 @@ async def webhook(req: Request):
                 print("Quiz ", quiz[0], "changed to ", quiz[1])
                 
             bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
-        except UnboundLocalError:
+        except UnboundLocalError as error:
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
-        except sqlite3.OperationalError:
+            print(error)
+        except sqlite3.OperationalError as error:
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+            print(error)
         
+        
+    elif text.startswith("/deletequiz"):
+        chat_id = data['message']['chat']['id']
+        
+        # Obtain quiz names from the user's message and store them in a list
+        quiz_name = text.replace("/deletequiz", "").strip()
+        
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("DELETE FROM quiz WHERE quiz_name=? AND user_id=?", (quiz_name, chat_id))
+                connection.commit()
+                cur.close()
+                
+            bot_reply = f"Quiz {quiz_name} deleted."
+        except UnboundLocalError as error:
+            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+            print(error)
+        except sqlite3.OperationalError as error:
+            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+            print(error)
         
     elif user_states.get(chat_id) == "awaiting_response":        
         # Receive the message form the user and store it
