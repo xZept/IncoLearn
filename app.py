@@ -224,6 +224,8 @@ async def webhook(req: Request):
             bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
         except UnboundLocalError:
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
+        except sqlite3.OperationalError:
+            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
         
         
     elif user_states.get(chat_id) == "awaiting_response":        
