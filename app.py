@@ -175,7 +175,7 @@ async def webhook(req: Request):
         /addquestion <quiz name> - Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
         /startquiz <quiz name> - Start answering a saved quiz.
-        /editquiz <quiz name> - Modify an existing quiz.
+        /editquiz <old quiz name> <new quiz name> - Modify an existing quiz.
         /deletequiz <quiz name> - Delete a quiz. This cannot be undone.
         /setreminder <quiz name> - Send a random question from an existing quiz every set time.
         /stopreminder - Stop the active /setreminder.
@@ -206,20 +206,24 @@ async def webhook(req: Request):
                 
     elif text.startswith("/editquiz"):
         chat_id = data['message']['chat']['id']
-        text = data['message']['text'].strip()
         
         # Obtain quiz names from the user's message and store them in a list
-        extracted_quiz_names = text.replace("/editquiz", "")
+        extracted_quiz_names = text.replace("/editquiz", "").strip
+        print("Extracted quiz names: ", extracted_quiz_names)
         quiz_names = extracted_quiz_names.split()
+        print(quiz_names)
         
-        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-            cur = connection.cursor()
-            cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_name[0], quiz_name[1], chat_id))
-            connection.commit()
-            cur.close()
-            print("Quiz ", quiz[0], "changed to ", quiz[1])
-            
-        bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[0], quiz_names[1], chat_id))
+                connection.commit()
+                cur.close()
+                print("Quiz ", quiz[0], "changed to ", quiz[1])
+                
+            bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
+        except UnboundLocalError:
+            bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
         
         
     elif user_states.get(chat_id) == "awaiting_response":        
