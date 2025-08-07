@@ -342,7 +342,7 @@ async def webhook(req: Request):
                 connection.commit()
                 cur.close()
 
-            bot_reply = f"Quiz successfully created! To add questions to {quiz_name}, use the /addquestion <quiz name> command."
+            bot_reply = f"Quiz successfully created! To add questions to your newly created quiz, use the /addquestion {quiz_name} command."
         except:
             bot_reply = f"Quiz {quiz_name} already exist! Choose a different name or use /addquestion <quiz name> to add a question to the existing quiz."
         
