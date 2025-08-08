@@ -354,30 +354,34 @@ async def webhook(req: Request):
         quiz_name = text.replace("/addquestion", "").strip()
         print(quiz_name) # For debugging
         
-        
-        # Check if string is not empty
-        if quiz_name.strip():
-            # Check if quiz exists  
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", (quiz_name,))
-                quiz = cur.fetchall()
-                cur.close()
-        
-            if len(quiz) == 0:
-                bot_reply = "Quiz does not exist!"
-            else:
-                bot_reply = "Please enter the question within 5 minutes."
-                # Set user state
-                chat_id = data['message']['chat']['id']
-                user_states[chat_id] = "awaiting_response"
-                
-                # Update target quiz for user    
-                target_quiz[chat_id] = quiz_name
+        try:
+            # Check if string is not empty
+            if quiz_name.strip():
+                # Check if quiz exists  
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", (quiz_name,))
+                    quiz = cur.fetchall()
+                    cur.close()
             
-        else:
-            bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
-        
+                if len(quiz) == 0:
+                    bot_reply = "Quiz does not exist!"
+                else:
+                    bot_reply = "Please enter the question within 5 minutes."
+                    # Set user state
+                    chat_id = data['message']['chat']['id']
+                    user_states[chat_id] = "awaiting_response"
+                    
+                    # Update target quiz for user    
+                    target_quiz[chat_id] = quiz_name
+                
+            else:
+                bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
+                
+        except sqlite3.OperationalError:
+            print(error)
+            bot_reply = "Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+            
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
