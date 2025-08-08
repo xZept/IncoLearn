@@ -378,7 +378,7 @@ async def webhook(req: Request):
             else:
                 bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
                 
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as error:
             print(error)
             bot_reply = "Quiz does not exist. Try checking your spelling or use /newquiz to create one."
             
