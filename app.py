@@ -102,6 +102,21 @@ async def create_question_table():
         print("Database quiz hasn't been created yet! Error message: ", error) # For debugging
         pass
 
+# Remove the surrounding special characters from a tuple item
+async def format_tuple_item(tuple_item):
+    # Convert to string
+    converted_tuple = str(tuple_item)
+    
+    # Get indexes
+    end_index = len(converted_tuple) - 3
+    start_index = 2
+    
+    # Slice string
+    sliced_quiz_name = converted_tuple[start_index:end_index]
+    
+    return sliced_quiz_name
+    
+
 # For debugging
 async def display_tables():
     try:
@@ -198,7 +213,7 @@ async def webhook(req: Request):
                 builder.write("Here are your saved quizzes:")
                 for quiz_name in quiz_names:
                     builder.write("\n")
-                    builder.write(str(quiz_name))
+                    builder.write(format_tuple_item(quiz_name))
                 bot_reply = builder.getvalue()
             cur.close()
         except sqlite3.OperationalError:
