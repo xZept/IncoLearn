@@ -213,7 +213,8 @@ async def webhook(req: Request):
                 builder.write("Here are your saved quizzes:")
                 for quiz_name in quiz_names:
                     builder.write("\n")
-                    builder.write(format_tuple_item(quiz_name))
+                    formatted_name = await format_tuple_item(quiz_name)
+                    builder.write(formatted_name)
                 bot_reply = builder.getvalue()
             cur.close()
         except sqlite3.OperationalError:
