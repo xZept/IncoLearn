@@ -236,10 +236,8 @@ async def webhook(req: Request):
                     cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[1], quiz_names[0], chat_id))
                     connection.commit()
                     cur.close()
-                    print("Old quiz name: ", quiz[0])
-                    print("New quiz name: ", quiz[1])
                     
-                bot_reply = f"Quiz renamed to {quiz[1]}. Use /viewquizzes to see saved quizzes."
+                bot_reply = f"Quiz renamed to {quiz_names[1]}. Use /viewquizzes to see saved quizzes."
             except UnboundLocalError as error:
                 bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
                 print(error)
