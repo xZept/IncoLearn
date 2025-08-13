@@ -190,7 +190,7 @@ async def webhook(req: Request):
         /addquestion <quiz name> - Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
         /startquiz <quiz name> - Start answering a saved quiz.
-        /editquiz <old quiz name> <new quiz name> - Modify an existing quiz.
+        /editquiz <quiz name> - Modify an existing quiz.
         /deletequiz <quiz name> - Delete a quiz. This cannot be undone.
         /setreminder <quiz name> - Send a random question from an existing quiz every set time.
         /stopreminder - Stop the active /setreminder.
@@ -224,29 +224,31 @@ async def webhook(req: Request):
         chat_id = data['message']['chat']['id']
         
         # Obtain quiz names from the user's message and store them in a list
-        extracted_quiz_names = text.replace("/editquiz", "").strip()
-        print("Extracted quiz names: ", extracted_quiz_names)
-        quiz_names = extracted_quiz_names.split()
-        print(quiz_names)
+        current_quiz_name = text.replace("/editquiz", "").strip()
+        print("Current quiz name: ", current_quiz_name)
         
-        if len(quiz_names) == 2:
-            try:
-                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                    cur = connection.cursor()
-                    cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=? AND user_id=?", (quiz_names[1], quiz_names[0], chat_id))
-                    connection.commit()
-                    cur.close()
-                    
-                bot_reply = f"Quiz renamed to {quiz_names[1]}. Use /viewquizzes to see saved quizzes."
-            except UnboundLocalError as error:
-                bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
-                print(error)
-            except sqlite3.OperationalError as error:
-                bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
-                print(error)
+        # Check if string is not empty
+        if current_quiz_name:
+            # Check if quiz exists  
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT * FROM quiz WHERE quiz_name=?", (current_quiz_name,))
+                quiz = cur.fetchall()
+                cur.close()
+                
+            if len(quiz) == 0:
+                bot_reply = "Quiz does not exist!"
+                print("Quiz does not exist.") # For debugging
+                
+            else:
+                bot_reply = "Please enter the new quiz name within 5 minutes."
+                
+                # Set user state and update target_quiz
+                user_states[chat_id] = "awaiting_quiz_name"
+                target_quiz[chat_id] = current_quiz_name
         else:
-            bot_reply = "Invalid input. Make sure to follow this format /editquiz <old quiz name> <new quiz name>."
-        
+            bot_reply = "Invalid input. Make sure to follow this format /editquiz <quiz name>."
+            print("User did not input the quiz name.") # For debugging
         
     elif text.startswith("/deletequiz"):
         chat_id = data['message']['chat']['id']
@@ -269,7 +271,117 @@ async def webhook(req: Request):
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
             print(error)
         
-    elif user_states.get(chat_id) == "awaiting_response":        
+    elif user_states.get(chat_id) == "awaiting_question":        
+        # Receive the message form the user and store it
+        try:
+            chat_id = data['message']['chat']['id']
+            text = data['message']['text'].strip()
+        except KeyError:
+            return{"ok": False, "error": "No valid message"}
+        
+        # Store quiz name and question
+        print(target_quiz[chat_id]) # For debugging
+        question = text
+        
+        # Reset user state
+        del user_states[chat_id]
+
+        if text.strip():
+            await create_question_table()
+            
+            # Retrieve quiz_id
+            try:
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target_quiz[chat_id]])
+                    quiz = cur.fetchone()
+                    quiz_id = quiz[0]
+                    cur.close()
+                    print("Quiz id retrieved!")
+
+            except sqlite3.OperationalError as e:
+                print("Database quiz hasn't been created yet!") # For debugging
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
+
+            except TypeError as e:
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
+                
+            except UnboundLocalError as e:
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Error message: ", e)
+                print("Database quiz hasn't been created yet!") # For debugging
+                await create_quiz_table()
+            
+            try:
+                # Insert question to the table
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    print(question) # For debugging
+                    cur.execute("INSERT OR IGNORE INTO question (quiz_id, question_text) VALUES(?,?)", (quiz_id, question.replace("/addquestion","").strip()))
+                    connection.commit()
+                    cur.close()
+                
+                bot_reply = f"Question added to {target_quiz[chat_id]}!"
+                del target_quiz[chat_id]
+                    
+                # For debugging
+                print(question)
+                await display_tables()   
+                
+            except UnboundLocalError as e: 
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Database quiz hasn't been created yet!") # For debugging
+                print("Error: ", e)
+                await create_quiz_table()
+        else:
+            bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
+            print("User took too long to respond.")
+            
+    elif user_states.get(chat_id) == "awaiting_quiz_name":        
+        # Receive the message form the user and store it
+        try:
+            chat_id = data['message']['chat']['id']
+            text = data['message']['text'].strip()
+        except KeyError:
+            return{"ok": False, "error": "No valid message"}
+        
+        # Store quiz name and question
+        print(f"Current quiz name: {target_quiz[chat_id]}; New quiz name: {text.strip()}") # For debugging
+        current_quiz_name = target_quiz[chat_id]
+        new_quiz_name = text.strip()
+        
+        # Reset user state and target quiz
+        del user_states[chat_id]
+        del target_quiz[chat_id]
+
+        if new_quiz_name:
+            try:
+                # Update quiz name if a user provides a valid one
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    print(question) # For debugging
+                    cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=?", (new_quiz_name, current_quiz_name))
+                    connection.commit()
+                    cur.close()
+                
+                bot_reply = f"Quiz {current_quiz_name} was updated to {new_quiz_name}. Use /viewquizzes to view available quizzes."
+                    
+                # For debugging
+                print(new_quiz_name)
+                await display_tables()   
+                
+            except UnboundLocalError as e: 
+                bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
+                print("Database quiz hasn't been created yet!") # For debugging
+                print("Error: ", e)
+                await create_quiz_table()
+        else:
+            bot_reply = "Quiz name cannot be blank. Please try again and enter a valid quiz name."
+            print("User took too long to respond.")
+            
+    elif user_states.get(chat_id) == "awaiting_quiz_name":        
         # Receive the message form the user and store it
         try:
             chat_id = data['message']['chat']['id']
@@ -384,7 +496,7 @@ async def webhook(req: Request):
                     bot_reply = "Please enter the question within 5 minutes."
                     # Set user state
                     chat_id = data['message']['chat']['id']
-                    user_states[chat_id] = "awaiting_response"
+                    user_states[chat_id] = "awaiting_question"
                     
                     # Update target quiz for user    
                     target_quiz[chat_id] = quiz_name
