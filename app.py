@@ -362,7 +362,6 @@ async def webhook(req: Request):
                 # Update quiz name if a user provides a valid one
                 with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                     cur = connection.cursor()
-                    print(question) # For debugging
                     cur.execute("UPDATE quiz SET quiz_name=? WHERE quiz_name=?", (new_quiz_name, current_quiz_name))
                     connection.commit()
                     cur.close()
