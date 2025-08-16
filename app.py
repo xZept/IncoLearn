@@ -236,6 +236,7 @@ async def webhook(req: Request):
                 quiz = cur.fetchall()
                 cur.close()
                 
+            # Reply when there is no quiz name given
             if len(quiz) == 0:
                 bot_reply = "Quiz does not exist!"
                 print("Quiz does not exist.") # For debugging
