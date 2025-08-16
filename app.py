@@ -25,7 +25,7 @@ client = httpx.AsyncClient()
 
 app = FastAPI()    
 
-# Global variables
+# Global variables.
 user_states = {}
 target_quiz = {}
 
