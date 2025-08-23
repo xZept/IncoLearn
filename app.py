@@ -27,8 +27,27 @@ app = FastAPI()
 
 # Global variables.
 user_states = {}
-target_quiz = {}
+target = {}
 
+# Get id or any other specific value from the table
+async def fetch_from_table(table_name, row_name, column_name, row_value):
+    try:
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            query = f"SELECT {column_name} FROM {table_name} WHERE {row_name} = ?"
+            cur.execute(query, (row_value,))
+            retrieved_value = cur.fetchone()
+            cur.close()
+            if retrieved_value:
+                print("Retrieved value:", retrieved_value[0])
+                return retrieved_value[0]
+            else:
+                print("No value found!")
+                return None
+            
+    except Exception as error:
+        print("Error in fetch_from_table function: ", error)
+    
 # Store user information asynchronously
 async def store_user_data(chat_id, username, first_name, last_name):
     # Create database and cursor object from the cursor class
@@ -93,7 +112,8 @@ async def create_question_table():
                             question_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             quiz_id INTEGER NOT NULL,
                             question_text TEXT NOT NULL,
-                            FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id))
+                            FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id)
+                        )
                         """)
             connection.commit()
             cur.close()
@@ -101,6 +121,25 @@ async def create_question_table():
     except sqlite3.OperationalError as error:
         print("Database quiz hasn't been created yet! Error message: ", error) # For debugging
         pass
+    
+async def create_answer_table():
+    try:
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("""
+                        CREATE TABLE IF NOT EXISTS answer(
+                            answer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            question_id INTEGER NOT NULL,
+                            answer_text TEXT NOT NULL, 
+                            FOREIGN KEY(question_id) REFERENCES question(question_id)
+                        )
+                        """)
+            connection.commit()
+            cur.close()
+        print("Database answer created successfully!") # For debugging
+    except sqlite3.OperationalError as error:
+        print("Database question hasn't been created yet! Error message: ", error) # For debugging
+        pass    
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -244,9 +283,9 @@ async def webhook(req: Request):
             else:
                 bot_reply = "Please enter the new quiz name within 5 minutes."
                 
-                # Set user state and update target_quiz
+                # Set user state and update target
                 user_states[chat_id] = "awaiting_quiz_name"
-                target_quiz[chat_id] = current_quiz_name
+                target[chat_id] = current_quiz_name
         else:
             bot_reply = "Invalid input. Make sure to follow this format /editquiz <quiz name>."
             print("User did not input the quiz name.") # For debugging
@@ -281,7 +320,7 @@ async def webhook(req: Request):
             return{"ok": False, "error": "No valid message"}
         
         # Store quiz name and question
-        print(target_quiz[chat_id]) # For debugging
+        print(target[chat_id]) # For debugging
         question = text
         
         # Reset user state
@@ -294,7 +333,7 @@ async def webhook(req: Request):
             try:
                 with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                     cur = connection.cursor()
-                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target_quiz[chat_id]])
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target[chat_id]])
                     quiz = cur.fetchone()
                     quiz_id = quiz[0]
                     cur.close()
@@ -324,12 +363,14 @@ async def webhook(req: Request):
                     connection.commit()
                     cur.close()
                 
-                bot_reply = f"Question added to {target_quiz[chat_id]}!"
-                del target_quiz[chat_id]
+                bot_reply = f"Question added to {target[chat_id]}! Now, enter the answer to that question."
+                del target[chat_id]
                     
                 # For debugging
                 print(question)
                 await display_tables()   
+                
+                
                 
             except UnboundLocalError as e: 
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
@@ -349,13 +390,13 @@ async def webhook(req: Request):
             return{"ok": False, "error": "No valid message"}
         
         # Store quiz name and question
-        print(f"Current quiz name: {target_quiz[chat_id]}; New quiz name: {text.strip()}") # For debugging
-        current_quiz_name = target_quiz[chat_id]
+        print(f"Current quiz name: {target[chat_id]}; New quiz name: {text.strip()}") # For debugging
+        current_quiz_name = target[chat_id]
         new_quiz_name = text.strip()
         
         # Reset user state and target quiz
         del user_states[chat_id]
-        del target_quiz[chat_id]
+        del target[chat_id]
 
         if new_quiz_name:
             try:
@@ -390,7 +431,7 @@ async def webhook(req: Request):
             return{"ok": False, "error": "No valid message"}
         
         # Store quiz name and question
-        print(target_quiz[chat_id]) # For debugging
+        print(target[chat_id]) # For debugging
         question = text
         
         # Reset user state
@@ -403,7 +444,7 @@ async def webhook(req: Request):
             try:
                 with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                     cur = connection.cursor()
-                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target_quiz[chat_id]])
+                    cur.execute("SELECT * FROM quiz WHERE quiz_name=?", [target[chat_id]])
                     quiz = cur.fetchone()
                     quiz_id = quiz[0]
                     cur.close()
@@ -433,8 +474,8 @@ async def webhook(req: Request):
                     connection.commit()
                     cur.close()
                 
-                bot_reply = f"Question added to {target_quiz[chat_id]}!"
-                del target_quiz[chat_id]
+                bot_reply = f"Question added to {target[chat_id]}!"
+                del target[chat_id]
                     
                 # For debugging
                 print(question)
@@ -493,13 +534,13 @@ async def webhook(req: Request):
                 if len(quiz) == 0:
                     bot_reply = "Quiz does not exist!"
                 else:
-                    bot_reply = "Please enter the question within 5 minutes."
+                    bot_reply = "Please enter the question."
                     # Set user state
                     chat_id = data['message']['chat']['id']
                     user_states[chat_id] = "awaiting_question"
                     
                     # Update target quiz for user    
-                    target_quiz[chat_id] = quiz_name
+                    target[chat_id] = quiz_name
                 
             else:
                 bot_reply = "Quiz name cannot be empty. Try again using /addquestion <quiz name>."
@@ -507,7 +548,8 @@ async def webhook(req: Request):
         except sqlite3.OperationalError as error:
             print(error)
             bot_reply = "Quiz does not exist. Try checking your spelling or use /newquiz to create one."
-            
+        
+        
     elif text == "/start":
         # Obtain user data then store it using a function
         from_user = data["message"]["from"]
