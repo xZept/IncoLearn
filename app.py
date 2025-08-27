@@ -379,9 +379,10 @@ async def webhook(req: Request):
                 print(question)
                 await display_tables()   
                 
-                # Set globalvariables for answer input from user
+                # Set global variables for answer input from user
                 user_states[chat_id] = "awaiting_answer"
                 target[chat_id] = fetch_quiz_id("question", "question_text", "question_id", question)
+                print("Current target: ", target[chat_id]) # For debugging
                 
             except UnboundLocalError as e: 
                 bot_reply="Quiz does not exist. Try checking your spelling or use /newquiz to create one."
@@ -471,7 +472,7 @@ async def webhook(req: Request):
                 print("Error: ", e)
                 await create_quiz_table()
         else:
-            bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
+            bot_reply = "Answer cannot be blank. Please try again and enter a valid question. Please try again."
             print("User took too long to respond.")
         
     elif text.startswith("/newquiz"):
