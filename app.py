@@ -381,7 +381,7 @@ async def webhook(req: Request):
                 
                 # Set global variables for answer input from user
                 user_states[chat_id] = "awaiting_answer"
-                target[chat_id] = fetch_quiz_id("question", "question_text", "question_id", question)
+                target[chat_id] = await fetch_quiz_id("question", "question_text", "question_id", question)
                 print("Current target: ", target[chat_id]) # For debugging
                 
             except UnboundLocalError as e: 
