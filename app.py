@@ -92,7 +92,8 @@ async def create_quiz_table():
                             quiz_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id INTEGER NOT NULL,
                             quiz_name TEXT UNIQUE NOT NULL,
-                            FOREIGN KEY(user_id) REFERENCES user(user_id))
+                            FOREIGN KEY(user_id) REFERENCES user(user_id) ON DELETE CASCADE
+                            )
                         """)
             connection.commit()
             cur.close()
@@ -112,7 +113,7 @@ async def create_question_table():
                             question_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             quiz_id INTEGER NOT NULL,
                             question_text TEXT NOT NULL,
-                            FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id)
+                            FOREIGN KEY(quiz_id) REFERENCES quiz(quiz_id) ON DELETE CASCADE
                         )
                         """)
             connection.commit()
@@ -131,7 +132,7 @@ async def create_answer_table():
                             answer_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             question_id INTEGER NOT NULL,
                             answer_text TEXT NOT NULL, 
-                            FOREIGN KEY(question_id) REFERENCES question(question_id)
+                            FOREIGN KEY(question_id) REFERENCES question(question_id) ON DELETE CASCADE
                         )
                         """)
             connection.commit()
@@ -141,6 +142,24 @@ async def create_answer_table():
         print("Database question hasn't been created yet! Error message: ", error) # For debugging
         pass    
 
+async def create_attempt_table():
+    try:
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("""
+                        CREATE TABLE IF NOT EXISTS attempt(
+                            attempt_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            question_id INTEGER NOT NULL,
+                            user_id INTEGER NOT NULL,
+                            score INTEGER NOT NULL, 
+                            attempt_date TEXT NOT NULL,
+                            FOREIGN KEY(question_id) REFERENCES question(question_id) ON DELETE CASCADE,
+                            FOREIGN KEY(user_id) REFERENCES user(user_id) ON DELETE CASCADE
+                        )
+                        """)
+    except sqlite3.OperationalError as error:
+        print("Database answer hasn't been created yet! Error message: ", error) # For debugging
+        pass    
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
     # Convert to string
@@ -308,6 +327,7 @@ async def webhook(req: Request):
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
+                connection.execute("PRAGMA foreign_keys=ON")
                 cur.execute("DELETE FROM quiz WHERE quiz_name=? AND user_id=?", (quiz_name, chat_id))
                 connection.commit()
                 cur.close()
