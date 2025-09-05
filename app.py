@@ -17,6 +17,7 @@ from telegram import Update
 import os
 import smtplib
 import io
+import datetime
 
 TOKEN = bot_token
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
@@ -29,8 +30,8 @@ app = FastAPI()
 user_states = {}
 target = {}
 
-# Get quiz id 
-async def fetch_quiz_id(table_name, row_name, column_name, row_value):
+# Get id 
+async def fetch_id(column_name, table_name, row_name, row_value):
     try:
         with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
             cur = connection.cursor()
@@ -46,7 +47,7 @@ async def fetch_quiz_id(table_name, row_name, column_name, row_value):
                 return None
             
     except Exception as error:
-        print("Error in fetch_quiz_id function: ", error)
+        print("Error in fetch_id function: ", error)
     
 # Store user information asynchronously
 async def store_user_data(chat_id, username, first_name, last_name):
@@ -160,6 +161,53 @@ async def create_attempt_table():
     except sqlite3.OperationalError as error:
         print("Database answer hasn't been created yet! Error message: ", error) # For debugging
         pass    
+    
+# Check if the answer is correct then record attempt
+async def check_answer(user_id, question, answer): 
+    # Format the answer
+    answer.strip().lower()
+    
+    # Fetch question id
+    retrieved_question_id = await fetch_id("question_id", "question", "question_id", question)
+    print("Question id: ", retrieved_question_id) # For debugging
+    
+    try:
+        # Find matches in the answer table then compare the question ids
+        if retrieved_question_id:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT question_id FROM answer WHERE answer = ?", (answer,))
+                foreign_question_id = cur.fetchone()
+                print("Question id: ", foreign_question_id) # For debugging
+                cur.close()
+                
+                if (retrieved_question_id == foreign_question_id):    
+                    # Record attempt
+                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                        cur = connection.cursor()
+                        await create_attempt_table()
+                        attempt_date = datetime.datetime.now()
+                        formatted_date = attempt_date.strftime("%x")
+                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", retrieved_question_id, user_id, "1", formatted_date)
+                        cur.close()
+                        bot_reply = "You got it right!"
+                        return bot_reply
+                
+                else:
+                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                        cur = connection.cursor()
+                        cur.execute("SELECT answer FROM answer WHERE question_id = ?", (retrieved_question_id,))
+                        correct_answer = cur.fetchone()
+                        print("Correct answer: ", correct_answer) # For debugging
+                        cur.close()
+                        bot_reply = f"Incorrect. The correct answer is {correct_answer}."
+                        return bot_reply
+        else:
+            bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
+            return bot_reply
+    except Exception as error:
+        print("Error in check answer function: ", error)
+
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
     # Convert to string
@@ -401,7 +449,7 @@ async def webhook(req: Request):
                 
                 # Set global variables for answer input from user
                 user_states[chat_id] = "awaiting_answer"
-                target[chat_id] = await fetch_quiz_id("question", "question_text", "question_id", question)
+                target[chat_id] = await fetch_id("question_id", "question", "question_text", question)
                 print("Current target: ", target[chat_id]) # For debugging
                 
             except UnboundLocalError as e: 
@@ -584,8 +632,40 @@ async def webhook(req: Request):
         
         bot_reply = "Feedback sent to Allen James!"
         
+    elif text == "/randomquestion":    
+        chat_id = data['message']['chat']['id']
+        
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT question_text FROM question ORDER_BY_RANDOM() LIMIT 1")
+                cur.execute()
+                question = cur.fetchone()
+                cur.close()
+                
+                # Set user states and target
+                target[chat_id] = question
+                user_states[chat_id] = "awaiting_random_answer"
+                
+                bot_reply = question
+        
+        except Exception as error:
+            print("Error in /randomquestion block: ", error)
+                
+        
+    elif user_states[chat_id] == "awaiting_random_answer":
+        # Store necessary parameters
+        user_id = chat_id = data['message']['chat']['id']
+        answer = text
+        
+        # Check if the answer is correct using a function
+        bot_reply = await check_answer(user_id, target[user_id], answer)
+        
+        # Clear temporary variables
+        del target[user_id], user_states[user_id]
+        
     else:
-        bot_reply = f"You said: {text}"
+        bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
         
     await client.get(
         f"{BASE_URL}/sendMessage",
