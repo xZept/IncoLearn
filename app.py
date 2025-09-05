@@ -638,7 +638,7 @@ async def webhook(req: Request):
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT question_text FROM question ORDER_BY_RANDOM() LIMIT 1")
+                cur.execute("SELECT question_text FROM question ORDER BY RANDOM() LIMIT 1")
                 cur.execute()
                 question = cur.fetchone()
                 cur.close()
