@@ -651,7 +651,7 @@ async def webhook(req: Request):
         
         except sqlite3.OperationalError as error:
             print("Error in /randomquestion block: ", error)
-            bot_reply("No question has been added yet! Add a new one using /addquestion <quiz name>.")
+            bot_reply = "No question has been added yet! Add a new one using /addquestion <quiz name>."
                 
         
     elif user_states[chat_id] == "awaiting_random_answer":
