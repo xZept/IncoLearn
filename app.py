@@ -388,7 +388,7 @@ async def webhook(req: Request):
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
             print(error)
         
-    elif user_states.get(chat_id) == "awaiting_question":        
+    elif user_states.get[chat_id] == "awaiting_question":        
         # Receive the message form the user and store it
         try:
             chat_id = data['message']['chat']['id']
