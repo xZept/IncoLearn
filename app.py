@@ -654,7 +654,7 @@ async def webhook(req: Request):
             bot_reply = "No question has been added yet! Add a new one using /addquestion <quiz name>."
                 
         
-    elif user_states[chat_id] == "awaiting_random_answer":
+    elif user_states.get[chat_id] == "awaiting_random_answer":
         # Store necessary parameters
         user_id = chat_id = data['message']['chat']['id']
         answer = text
