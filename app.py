@@ -194,7 +194,6 @@ async def check_answer(user_id, question, answer):
                         return bot_reply
                 
                 else:
-                    create_answer_table()
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
                         cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
