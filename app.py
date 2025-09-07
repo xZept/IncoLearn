@@ -168,7 +168,7 @@ async def check_answer(user_id, question, answer):
     answer.strip().lower()
     
     # Fetch question id
-    retrieved_question_id = await fetch_id("question_id", "question", "question_id", question)
+    retrieved_question_id = await fetch_id("question_id", "question", "question_text", question)
     print("Question id: ", retrieved_question_id) # For debugging
     
     try:
