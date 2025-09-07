@@ -197,7 +197,8 @@ async def check_answer(user_id, question, answer):
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
                         cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
-                        correct_answer = cur.fetchone()
+                        fetched_answer = cur.fetchone()
+                        correct_answer = fetched_answer.replace("(", "").replace(")", "").replace("'", "").replace(",","") # Clear formatting
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
