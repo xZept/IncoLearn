@@ -194,6 +194,7 @@ async def check_answer(user_id, question, answer):
                         return bot_reply
                 
                 else:
+                    create_answer_table()
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
                         cur.execute("SELECT answer FROM answer WHERE question_id = ?", (retrieved_question_id,))
@@ -205,8 +206,9 @@ async def check_answer(user_id, question, answer):
         else:
             bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
             return bot_reply
-    except Exception as error:
+    except sqlite3.OperationalError as error:
         print("Error in check answer function: ", error)
+        bot_reply = "There was an internal database error. Please contact the developer using /feedback."
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
