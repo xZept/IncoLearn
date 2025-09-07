@@ -198,7 +198,7 @@ async def check_answer(user_id, question, answer):
                         cur = connection.cursor()
                         cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                         fetched_answer = cur.fetchone()
-                        correct_answer = fetched_answer.replace("(", "").replace(")", "").replace("'", "").replace(",","") # Clear formatting
+                        correct_answer = format_tuple_item(fetched_answer)
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
@@ -220,9 +220,9 @@ async def format_tuple_item(tuple_item):
     start_index = 2
     
     # Slice string
-    sliced_quiz_name = converted_tuple[start_index:end_index]
+    sliced_tuple = converted_tuple[start_index:end_index]
     
-    return sliced_quiz_name
+    return sliced_tuple
     
 
 # For debugging
