@@ -198,7 +198,7 @@ async def check_answer(user_id, question, answer):
                         cur = connection.cursor()
                         cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                         fetched_answer = cur.fetchone()
-                        correct_answer = format_tuple_item(fetched_answer)
+                        correct_answer = await format_tuple_item(fetched_answer)
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
