@@ -40,7 +40,7 @@ async def fetch_id(column_name, table_name, row_name, row_value):
             retrieved_value = cur.fetchone()
             cur.close()
             if retrieved_value:
-                print("Retrieved value:", str(retrieved_value[0]),)
+                print("Retrieved value:", retrieved_value[0])
                 return retrieved_value[0]
             else:
                 print("No value found!")
@@ -659,7 +659,7 @@ async def webhook(req: Request):
         answer = text
         
         # Check if the answer is correct using a function
-        bot_reply = await check_answer(user_id, target[user_id], answer)
+        bot_reply = await check_answer(user_id, str(target[user_id][0]), answer)
         
         # Clear temporary variables
         del target[user_id], user_states[user_id]
