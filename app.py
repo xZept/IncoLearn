@@ -197,7 +197,7 @@ async def check_answer(user_id, question, answer):
                     create_answer_table()
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
-                        cur.execute("SELECT answer FROM answer WHERE question_id = ?", (retrieved_question_id,))
+                        cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                         correct_answer = cur.fetchone()
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
