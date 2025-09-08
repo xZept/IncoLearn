@@ -190,7 +190,7 @@ async def check_answer(user_id, question, answer):
                         await create_attempt_table()
                         attempt_date = datetime.datetime.now()
                         formatted_date = attempt_date.strftime("%x")
-                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", retrieved_question_id, user_id, "1", formatted_date)
+                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "1", formatted_date))
                         cur.close()
                         bot_reply = "You got it right!"
                         return bot_reply
