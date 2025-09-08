@@ -176,9 +176,10 @@ async def check_answer(user_id, question, answer):
         if retrieved_question_id:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                print("Answer: ", answer)
+                print("Answer: ", answer) # For debugging
                 cur.execute("SELECT question_id FROM answer WHERE answer_text COLLATE NOCASE = ?", (answer,))
-                foreign_question_id = cur.fetchone()
+                retrieved_tuple = cur.fetchone()
+                foreign_question_id = retrieved_tuple[0]
                 print("Question id: ", foreign_question_id) # For debugging
                 cur.close()
                 
@@ -199,7 +200,7 @@ async def check_answer(user_id, question, answer):
                         cur = connection.cursor()
                         cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                         fetched_answer = cur.fetchone()
-                        correct_answer = await format_tuple_item(fetched_answer)
+                        correct_answer = fetched_answer[0]
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
