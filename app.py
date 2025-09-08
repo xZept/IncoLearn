@@ -176,7 +176,8 @@ async def check_answer(user_id, question, answer):
         if retrieved_question_id:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT question_id FROM answer WHERE answer_text = ?", (answer,))
+                print("Answer: ", answer)
+                cur.execute("SELECT question_id FROM answer WHERE answer_text COLLATE NOCASE = ?", (answer,))
                 foreign_question_id = cur.fetchone()
                 print("Question id: ", foreign_question_id) # For debugging
                 cur.close()
