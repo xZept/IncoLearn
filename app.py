@@ -313,9 +313,8 @@ async def webhook(req: Request):
         /startquiz <quiz name> - Start answering a saved quiz.
         /editquiz <quiz name> - Modify an existing quiz.
         /deletequiz <quiz name> - Delete a quiz. This cannot be undone.
-        /setreminder <quiz name> - Send a random question from an existing quiz every set time.
-        /stopreminder - Stop the active /setreminder.
         /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
+        /viewscore - Shows the user's total points.
         /feedback <message> - Send feedback about the bot to the developer.
         """
     
@@ -354,7 +353,7 @@ async def webhook(req: Request):
             user_states[chat_id] = "in_quiz"
             target[chat_id] = retrieved_quiz_id
             global_counter[chat_id] = None
-            bot_reply = "Initiated a quiz session..."
+            bot_reply = "Quiz initiated. Type any key to proceed."
                 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
@@ -438,14 +437,14 @@ async def webhook(req: Request):
                     for question in set_of_questions:
                         print(question) # For debugging
                     cur.close()
-                    bot_reply = "For each question, reply with your answer. Goodluck!"
+                    bot_reply = "For each question, reply with your answer. Goodluck! Type any key to proceed."
                     
             except Exception as error:
                 print('Exception in "in_quiz" block: ', error)
                 bot_reply = "An error occured. Please contact the developer using /feedback."
         
         else:
-            current_index = global_counter[chat_id]
+            current_index = global_counter[chat_id] - 1
             bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text)
             global_counter[chat_id] -= 1
 
