@@ -29,6 +29,8 @@ app = FastAPI()
 # Global variables.
 user_states = {}
 target = {}
+global_counter = {}
+quiz_questions = {}
 
 # Get id 
 async def fetch_id(column_name, table_name, row_name, row_value):
@@ -339,6 +341,22 @@ async def webhook(req: Request):
         except sqlite3.OperationalError:
             bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
                 
+    elif text == "/startquiz":
+        chat_id = data['message']['chat']['id']
+        
+        # Check if the quiz exists then store its id
+        retrieved_quiz_id = await fetch_id("quiz_id", "quiz", "quiz_name", text)
+        
+        if retrieved_quiz_id:
+            print("Retrieved quiz id: ", retrieved_quiz_id)
+            user_states[chat_id] = "in_quiz"
+            target[chat_id] = retrieved_quiz_id
+            global_counter[chat_id] = None
+            bot_reply = "Initiated a quiz session..."
+                
+        else:
+            bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
+        
     elif text.startswith("/editquiz"):
         chat_id = data['message']['chat']['id']
         
@@ -391,6 +409,44 @@ async def webhook(req: Request):
         except sqlite3.OperationalError as error:
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
             print(error)
+        
+    elif user_states.get(chat_id) == "in_quiz":
+        chat_id = data['message']['chat']['id']
+        
+        if global_counter[chat_id] == 0:
+            bot_reply = "Well done! You just finished the quiz! Use /viewscore to see how much points were added."
+            del user_states[chat_id], global_counter[chat_id], target[chat_id] # Reset global variables
+            
+        elif global_counter.get(chat_id) is None:
+            # For debugging
+            print("Current user state: ", user_states.get(chat_id))
+            print("User id: ", chat_id)
+            
+            try:
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    print("Target quiz id: ", target[chat_id]) # For debugging
+                    target_quiz = target[chat_id]
+                    cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
+                    retrieved_rows = cur.fetchall()
+                    set_of_questions = [row[0] for row in retrieved_rows]
+                    global_counter[chat_id] = len(set_of_questions)
+                    quiz_questions[chat_id] = set_of_questions
+                    print("Number of questions: ", global_counter[chat_id]) # For debugging
+                    for question in set_of_questions:
+                        print(question) # For debugging
+                    cur.close()
+                    bot_reply = "For each question, reply with your answer. Goodluck!"
+                    
+            except Exception as error:
+                print('Exception in "in_quiz" block: ', error)
+                bot_reply = "An error occured. Please contact the developer using /feedback."
+        
+        else:
+            current_index = global_counter[chat_id]
+            bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text)
+            global_counter[chat_id] -= 1
+
         
     elif user_states.get(chat_id) == "awaiting_question":        
         # Receive the message form the user and store it
