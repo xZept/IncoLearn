@@ -341,8 +341,10 @@ async def webhook(req: Request):
         except sqlite3.OperationalError:
             bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
                 
-    elif text == "/startquiz":
+    elif text.startswith("/startquiz"):
         chat_id = data['message']['chat']['id']
+        text = text[10:].strip() # Slice and strip the quiz name
+        print("Quiz name: ", text) # For debugging
         
         # Check if the quiz exists then store its id
         retrieved_quiz_id = await fetch_id("quiz_id", "quiz", "quiz_name", text)
