@@ -202,7 +202,7 @@ async def check_answer(user_id, question, answer, chat_id):
                 else:
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
-                        cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
+                        cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id.strip(),))
                         fetched_answer = cur.fetchone()
                         correct_answer = fetched_answer[0]
                         print("Correct answer: ", correct_answer) # For debugging
@@ -760,7 +760,7 @@ async def webhook(req: Request):
             # Check if the answer is correct using a function
             bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
         except TypeError as error:
-            bot_reply = ""
+            bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             
         # Clear temporary variables
         del target[user_id], user_states[user_id], session_score[user_id]
