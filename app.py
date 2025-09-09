@@ -195,14 +195,23 @@ async def check_answer(user_id, question, answer, chat_id):
                         formatted_date = attempt_date.strftime("%x")
                         cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "1", formatted_date))
                         cur.close()
-                        bot_reply = "You got it right!"
+                        bot_reply = "You got it right! You get a point for that."
                         session_score[chat_id] = session_score.get(chat_id, 0) + 1
                         return bot_reply
                 
                 else:
+                    await create_attempt_table() 
+                    # Record attempt
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
-                        cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id.strip(),))
+                        attempt_date = datetime.datetime.now()
+                        formatted_date = attempt_date.strftime("%x")
+                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "0", formatted_date))
+                        cur.close()
+                    
+                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                        cur = connection.cursor()
+                        cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                         fetched_answer = cur.fetchone()
                         correct_answer = fetched_answer[0]
                         print("Correct answer: ", correct_answer) # For debugging
@@ -212,6 +221,7 @@ async def check_answer(user_id, question, answer, chat_id):
         else:
             bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
             return bot_reply
+        
     except sqlite3.OperationalError as error:
         print("Error in check answer function: ", error)
         bot_reply = "There was an internal database error. Please contact the developer using /feedback."
@@ -219,6 +229,15 @@ async def check_answer(user_id, question, answer, chat_id):
         
     except TypeError as error:
         try:
+            await create_attempt_table() 
+            # Record attempt
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                attempt_date = datetime.datetime.now()
+                formatted_date = attempt_date.strftime("%x")
+                cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "0", formatted_date))
+                cur.close()
+                        
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                             cur = connection.cursor()
                             cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
