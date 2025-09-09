@@ -31,6 +31,7 @@ user_states = {}
 target = {}
 global_counter = {}
 quiz_questions = {}
+session_score = {}
 
 # Get id 
 async def fetch_id(column_name, table_name, row_name, row_value):
@@ -165,9 +166,9 @@ async def create_attempt_table():
         pass    
     
 # Check if the answer is correct then record attempt
-async def check_answer(user_id, question, answer): 
+async def check_answer(user_id, question, answer, chat_id): 
     # Format the answer
-    answer.strip().lower()
+    answer = answer.strip().lower()
     
     # Fetch question id
     retrieved_question_id = await fetch_id("question_id", "question", "question_text", question)
@@ -185,16 +186,17 @@ async def check_answer(user_id, question, answer):
                 print("Question id: ", foreign_question_id) # For debugging
                 cur.close()
                 
-                if (retrieved_question_id == foreign_question_id):    
+                if (retrieved_question_id == foreign_question_id):   
+                    await create_attempt_table() 
                     # Record attempt
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
-                        await create_attempt_table()
                         attempt_date = datetime.datetime.now()
                         formatted_date = attempt_date.strftime("%x")
                         cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "1", formatted_date))
                         cur.close()
                         bot_reply = "You got it right!"
+                        session_score[chat_id] = session_score.get(chat_id, 0) + 1
                         return bot_reply
                 
                 else:
@@ -229,6 +231,43 @@ async def check_answer(user_id, question, answer):
         except Exception as error:
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             return bot_reply
+
+# Recursive function for /startquiz
+async def start_quiz(chat_id, text):
+    if global_counter.get(chat_id) == 0:
+        bot_reply = "Reached the end of the line."
+        del user_states[chat_id], global_counter[chat_id], target[chat_id] # Reset global variables
+        return bot_reply
+            
+    elif global_counter.get(chat_id) is None:
+        # For debugging
+        print("Current user state: ", user_states.get(chat_id))
+        print("User id: ", chat_id)
+        
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                print("Target quiz id: ", target[chat_id]) # For debugging
+                target_quiz = target[chat_id]
+                cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
+                retrieved_rows = cur.fetchall()
+                set_of_questions = [row[0] for row in retrieved_rows]
+                global_counter[chat_id] = len(set_of_questions)
+                quiz_questions[chat_id] = set_of_questions
+                print("Number of questions: ", global_counter[chat_id]) # For debugging
+                for question in set_of_questions:
+                    print(question) # For debugging
+                cur.close()
+                await start_quiz(chat_id, text) # Recurse the function
+                
+        except Exception as error:
+            print('Exception in "in_quiz" block: ', error)
+            bot_reply = "An error occured. Please contact the developer using /feedback."
+    
+    else:
+        current_index = global_counter[chat_id] - 1
+        bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
+        global_counter[chat_id] -= 1
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -283,6 +322,15 @@ async def display_tables():
             for row in rows:
                 print(row)
             cur.close()
+        
+        # Display attempt table
+        with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+            cur = connection.cursor()
+            cur.execute("SELECT * FROM attempt")
+            rows = cur.fetchall()
+            for row in rows:
+                print(row)
+            cur.close()
             
     except sqlite3.OperationalError as error:
         print("Database table hasn't been created yet. Error message: ", error)
@@ -315,7 +363,7 @@ async def webhook(req: Request):
     # For debugging
     print(text)
     # For debugging 
-    display_tables()
+    await display_tables()
 
     # Strip unecessary spaces and make it case-insensitive
     text = text.strip().lower()
@@ -369,7 +417,8 @@ async def webhook(req: Request):
             user_states[chat_id] = "in_quiz"
             target[chat_id] = retrieved_quiz_id
             global_counter[chat_id] = None
-            bot_reply = "Quiz initiated. Type any key to proceed."
+            bot_reply = "Please reply with your answer for each question."
+            await start_quiz(chat_id, text) # Call recursive function
                 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
@@ -430,39 +479,11 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
         
-        if global_counter[chat_id] == 0:
-            bot_reply = "Well done! You just finished the quiz! Use /viewscore to see how much points were added."
-            del user_states[chat_id], global_counter[chat_id], target[chat_id] # Reset global variables
-            
-        elif global_counter.get(chat_id) is None:
-            # For debugging
-            print("Current user state: ", user_states.get(chat_id))
-            print("User id: ", chat_id)
-            
-            try:
-                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                    cur = connection.cursor()
-                    print("Target quiz id: ", target[chat_id]) # For debugging
-                    target_quiz = target[chat_id]
-                    cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
-                    retrieved_rows = cur.fetchall()
-                    set_of_questions = [row[0] for row in retrieved_rows]
-                    global_counter[chat_id] = len(set_of_questions)
-                    quiz_questions[chat_id] = set_of_questions
-                    print("Number of questions: ", global_counter[chat_id]) # For debugging
-                    for question in set_of_questions:
-                        print(question) # For debugging
-                    cur.close()
-                    bot_reply = "For each question, reply with your answer. Goodluck! Type any key to proceed."
-                    
-            except Exception as error:
-                print('Exception in "in_quiz" block: ', error)
-                bot_reply = "An error occured. Please contact the developer using /feedback."
-        
+        if bot_reply == "Reached the end of the line.":
+            bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
+            del session_score[chat_id]
         else:
-            current_index = global_counter[chat_id] - 1
-            bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text)
-            global_counter[chat_id] -= 1
+            bot_reply = await start_quiz(chat_id, text) # Call recursive function
 
         
     elif user_states.get(chat_id) == "awaiting_question":        
@@ -737,12 +758,12 @@ async def webhook(req: Request):
         
         try: 
             # Check if the answer is correct using a function
-            bot_reply = await check_answer(user_id, str(target[user_id][0]), answer)
+            bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
         except TypeError as error:
             bot_reply = ""
             
         # Clear temporary variables
-        del target[user_id], user_states[user_id]
+        del target[user_id], user_states[user_id], session_score[user_id]
         
     else:
         bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
