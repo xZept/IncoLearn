@@ -213,6 +213,22 @@ async def check_answer(user_id, question, answer):
     except sqlite3.OperationalError as error:
         print("Error in check answer function: ", error)
         bot_reply = "There was an internal database error. Please contact the developer using /feedback."
+        return bot_reply
+        
+    except TypeError as error:
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                            cur = connection.cursor()
+                            cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
+                            fetched_answer = cur.fetchone()
+                            correct_answer = fetched_answer[0]
+                            print("Correct answer: ", correct_answer) # For debugging
+                            cur.close()
+                            bot_reply = f"Incorrect. The correct answer is {correct_answer}."
+                            return bot_reply
+        except Exception as error:
+            bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
+            return bot_reply
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -719,9 +735,12 @@ async def webhook(req: Request):
         user_id = chat_id = data['message']['chat']['id']
         answer = text
         
-        # Check if the answer is correct using a function
-        bot_reply = await check_answer(user_id, str(target[user_id][0]), answer)
-        
+        try: 
+            # Check if the answer is correct using a function
+            bot_reply = await check_answer(user_id, str(target[user_id][0]), answer)
+        except TypeError as error:
+            bot_reply = ""
+            
         # Clear temporary variables
         del target[user_id], user_states[user_id]
         
