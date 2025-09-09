@@ -165,6 +165,15 @@ async def create_attempt_table():
         print("Database answer hasn't been created yet! Error message: ", error) # For debugging
         pass    
     
+async def record_attempt(score, user_id, retrieved_question_id):
+    await create_attempt_table() 
+    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+        cur = connection.cursor()
+        attempt_date = datetime.datetime.now()
+        formatted_date = attempt_date.strftime("%x")
+        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, score, formatted_date))
+        cur.close()
+    
 # Check if the answer is correct then record attempt
 async def check_answer(user_id, question, answer, chat_id): 
     # Format the answer
@@ -187,27 +196,10 @@ async def check_answer(user_id, question, answer, chat_id):
                 cur.close()
                 
                 if (retrieved_question_id == foreign_question_id):   
-                    await create_attempt_table() 
-                    # Record attempt
-                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                        cur = connection.cursor()
-                        attempt_date = datetime.datetime.now()
-                        formatted_date = attempt_date.strftime("%x")
-                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "1", formatted_date))
-                        cur.close()
-                        bot_reply = "You got it right! You get a point for that."
-                        session_score[chat_id] = session_score.get(chat_id, 0) + 1
-                        return bot_reply
+                    await record_attempt("1", user_id, retrieved_question_id)
                 
                 else:
-                    await create_attempt_table() 
-                    # Record attempt
-                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                        cur = connection.cursor()
-                        attempt_date = datetime.datetime.now()
-                        formatted_date = attempt_date.strftime("%x")
-                        cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "0", formatted_date))
-                        cur.close()
+                    await record_attempt("1", user_id, retrieved_question_id)
                     
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
@@ -229,14 +221,7 @@ async def check_answer(user_id, question, answer, chat_id):
         
     except TypeError as error:
         try:
-            await create_attempt_table() 
-            # Record attempt
-            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                cur = connection.cursor()
-                attempt_date = datetime.datetime.now()
-                formatted_date = attempt_date.strftime("%x")
-                cur.execute("INSERT INTO attempt (question_id, user_id, score, attempt_date) VALUES(?, ?, ?, ?)", (retrieved_question_id, user_id, "0", formatted_date))
-                cur.close()
+            await record_attempt("1", user_id, retrieved_question_id)
                         
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                             cur = connection.cursor()
@@ -781,8 +766,12 @@ async def webhook(req: Request):
         except TypeError as error:
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             
-        # Clear temporary variables
-        del target[user_id], user_states[user_id], session_score[user_id]
+        try:
+            # Clear temporary variables
+            del target[user_id], user_states[user_id], session_score[user_id]
+        except KeyError as error:
+            print("Key error encountered in awaiting_random_answer block: ", error)
+            pass
         
     else:
         bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
