@@ -189,21 +189,21 @@ async def check_answer(user_id, question, answer, chat_id):
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
                 print("Answer: ", answer) # For debugging
-                cur.execute("SELECT question_id FROM answer WHERE answer_text COLLATE NOCASE = ?", (answer,))
+                cur.execute("SELECT answer_text FROM answer WHERE question_id = ?", (retrieved_question_id,))
                 retrieved_tuple = cur.fetchone()
-                foreign_question_id = retrieved_tuple[0]
-                print("Question id: ", foreign_question_id) # For debugging
+                answer_from_table = retrieved_tuple[0]
+                print("Retrieved answer: ", answer_from_table) # For debugging
                 cur.close()
                 
-                if (retrieved_question_id == foreign_question_id):   
+                if (answer == answer_from_table.strip().lower()):   
                     await record_attempt("1", user_id, retrieved_question_id)
-                    print("retrieved_question_id == foreign_question_id")
+                    print("Answers matched!")
                     bot_reply = "You got it right! A point is added to your total score"
                     return bot_reply
                 
                 else:
                     await record_attempt("0", user_id, retrieved_question_id)
-                    print("Question ids did not match.")
+                    print("Answers did not match.")
                     
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
