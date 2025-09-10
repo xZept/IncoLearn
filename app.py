@@ -277,14 +277,14 @@ async def start_quiz(chat_id, text):
             return bot_reply
     
     else:
-        current_question = quiz_questions[global_counter[chat_id]]
+        current_index = global_counter[chat_id] - 1
+        current_question = quiz_questions[chat_id][current_index]
         # Send question
         async with httpx.AsyncClient() as client:
             await client.post(
                 f"{BASE_URL}/sendMessage",
                 json={"chat_id": chat_id, "text": current_question}
             )
-        current_index = global_counter[chat_id] - 1
         bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
         global_counter[chat_id] -= 1
         return bot_reply
