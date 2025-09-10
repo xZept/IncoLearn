@@ -212,6 +212,7 @@ async def check_answer(user_id, question, answer, chat_id):
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
                         return bot_reply
         else:
+            print("retrived_question_id not found.")
             bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
             return bot_reply
         
@@ -234,6 +235,7 @@ async def check_answer(user_id, question, answer, chat_id):
                             bot_reply = f"Incorrect. The correct answer is {correct_answer}."
                             return bot_reply
         except Exception as error:
+            print("Exception occured in the last except statement of check_answer")
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             return bot_reply
 
