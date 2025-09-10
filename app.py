@@ -199,6 +199,7 @@ async def check_answer(user_id, question, answer, chat_id):
                     await record_attempt("1", user_id, retrieved_question_id)
                     print("retrieved_question_id == foreign_question_id")
                     bot_reply = "You got it right! A point is added to your total score"
+                    return bot_reply
                 
                 else:
                     await record_attempt("0", user_id, retrieved_question_id)
