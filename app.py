@@ -269,16 +269,18 @@ async def start_quiz(chat_id, text):
                 for question in set_of_questions:
                     print(question) # For debugging
                 cur.close()
-                await start_quiz(chat_id, text) # Recurse the function
+                return await start_quiz(chat_id, text) # Recurse the function
                 
         except Exception as error:
             print('Exception in "in_quiz" block: ', error)
             bot_reply = "An error occured. Please contact the developer using /feedback."
+            return bot_reply
     
     else:
         current_index = global_counter[chat_id] - 1
         bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
         global_counter[chat_id] -= 1
+        return bot_reply
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
