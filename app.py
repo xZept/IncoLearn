@@ -197,10 +197,12 @@ async def check_answer(user_id, question, answer, chat_id):
                 
                 if (retrieved_question_id == foreign_question_id):   
                     await record_attempt("1", user_id, retrieved_question_id)
+                    print("retrieved_question_id == foreign_question_id")
                     bot_reply = "You got it right! A point is added to your total score"
                 
                 else:
                     await record_attempt("0", user_id, retrieved_question_id)
+                    print("Question ids did not match.")
                     
                     with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                         cur = connection.cursor()
@@ -224,6 +226,7 @@ async def check_answer(user_id, question, answer, chat_id):
     except TypeError as error:
         try:
             await record_attempt("0", user_id, retrieved_question_id)
+            print("Type error occured: ", error)
                         
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                             cur = connection.cursor()
@@ -235,7 +238,7 @@ async def check_answer(user_id, question, answer, chat_id):
                             bot_reply = f"Incorrect. The correct answer is {correct_answer}."
                             return bot_reply
         except Exception as error:
-            print("Exception occured in the last except statement of check_answer")
+            print("Exception occured in the last except statement of check_answer:", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             return bot_reply
 
