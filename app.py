@@ -197,7 +197,7 @@ async def check_answer(user_id, question, answer, chat_id):
                 
                 if (retrieved_question_id == foreign_question_id):   
                     await record_attempt("1", user_id, retrieved_question_id)
-                    bot_reply = "You got it right! A point is added to your total score."
+                    bot_reply = "You got it right! A point is added to your total score"
                 
                 else:
                     await record_attempt("0", user_id, retrieved_question_id)
@@ -745,12 +745,11 @@ async def webhook(req: Request):
                 question = cur.fetchone()
                 cur.close()
                 
-                if question:
-                    question = question[0]
-                    target[chat_id] = question
-                    user_states[chat_id] = "awaiting_random_answer"
-                    bot_reply = question
+                # Set user states and target
+                target[chat_id] = question
+                user_states[chat_id] = "awaiting_random_answer"
                 
+                bot_reply = question
         
         except sqlite3.OperationalError as error:
             print("Error in /randomquestion block: ", error)
@@ -766,6 +765,7 @@ async def webhook(req: Request):
             # Check if the answer is correct using a function
             bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
         except TypeError as error:
+            print("Type error occured in awaiting_random_answer block: ", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             
         try:
