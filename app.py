@@ -253,20 +253,24 @@ async def check_answer(user_id, question, answer, chat_id):
             return
         await reply(chat_id, bot_reply)
     
+async def handle_question(chat_id, answer):
+    current_index = global_counter[chat_id] - 1
+    await check_answer(chat_id, quiz_questions[chat_id][current_index], answer, chat_id)
+    return   
+    
 # Function for /startquiz
-async def start_quiz(chat_id, text):
-        current_index = global_counter[chat_id] - 1
-        current_question = quiz_questions[chat_id][current_index]
-        await reply(chat_id, current_question) # Send question
-        await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
-        
+async def show_question(chat_id):
         if global_counter.get(chat_id) == 0:
             print("EOF")
             del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
             return "Reached the end of the line."
+        
+        current_index = global_counter[chat_id] - 1
+        current_question = quiz_questions[chat_id][current_index]
+        await reply(chat_id, current_question) # Send question
 
         global_counter[chat_id] -= 1
-        print("Answer received! Bot reply processing...")
+        print("show_question passed")
         return 
 
 # Remove the surrounding special characters from a tuple item
@@ -412,7 +416,7 @@ async def webhook(req: Request):
         try:
             with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
                 cur = connection.cursor()
-                cur.execute("SELECT COUNT(*) FROM quiz WHERE user_id=? AND score=1", (chat_id,))
+                cur.execute("SELECT COUNT(*) FROM attempt WHERE user_id=? AND score=1", (chat_id,))
                 correct_attempts = cur.fetchone()[0]
                 cur.close()
                 bot_reply = f"In total, you accumulated {correct_attempts} points! Keep going nigga!"
@@ -456,7 +460,7 @@ async def webhook(req: Request):
                         for question in set_of_questions:
                             print(question) # For debugging
                         cur.close()
-                        return await start_quiz(chat_id, text) # Recurse
+                        await show_question(chat_id, text)
                         
                 except Exception as error:
                     print('Exception in "in_quiz" block: ', error)
@@ -527,7 +531,8 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
         
-        answer_check = await start_quiz(chat_id, text) # Call recursive function
+        handle_question(chat_id, text)
+        answer_check = await show_question(chat_id, text) # Call recursive function
         
         if answer_check == "Reached the end of the line.":
             bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
