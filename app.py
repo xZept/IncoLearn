@@ -213,6 +213,7 @@ async def check_answer(user_id, question, answer, chat_id):
                     print("Answers matched!")
                     bot_reply = "You got it right! A point is added to your total score."
                     session_score[chat_id] += 1 # Add one point to session score
+                    await reply(chat_id, bot_reply)
                     return 
                 
                 else:
@@ -227,15 +228,19 @@ async def check_answer(user_id, question, answer, chat_id):
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
+                        await reply(chat_id, bot_reply)
                         return
+        
         else:
             print("retrived_question_id not found.")
             bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
+            await reply(chat_id, bot_reply)
             return 
         
     except sqlite3.OperationalError as error:
         print("Error in check answer function: ", error)
         bot_reply = "There was an internal database error. Please contact the developer using /feedback."
+        await reply(chat_id, bot_reply)
         return 
         
     except TypeError as error:
@@ -256,8 +261,7 @@ async def check_answer(user_id, question, answer, chat_id):
             print("Exception occured in the last except statement of check_answer:", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             return
-    
-    await reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
 
 # Recursive function for /startquiz
 async def start_quiz(chat_id, text):
