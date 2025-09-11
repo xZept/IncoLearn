@@ -794,7 +794,7 @@ async def webhook(req: Request):
                 cur.close()
                 
                 # Set user states and target
-                target[chat_id] = question[0]
+                target[chat_id] = question
                 session_score[chat_id] = 0
                 user_states[chat_id] = "awaiting_random_answer"
                 
