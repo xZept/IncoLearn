@@ -2,7 +2,8 @@ import httpx
 from fastapi import FastAPI, Request
 from telebot.credentials import bot_token, bot_user_name, URL
 import sqlite3
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import os
 import smtplib
 import io
@@ -251,22 +252,49 @@ async def check_answer(user_id, question, answer, chat_id):
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
             return
         await reply(chat_id, bot_reply)
-
+    
 # Function for /startquiz
 async def start_quiz(chat_id, text):
-    current_index = global_counter[chat_id] - 1
-    current_question = quiz_questions[chat_id][current_index]
-    await reply(chat_id, current_question) # Send question
-    await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
-    
-    if global_counter.get(chat_id) == 0:
-        print("EOF")
-        del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
-        return "Reached the end of the line."
+    if global_counter.get(chat_id) is None:
+        # For debugging
+        print("Current user state: ", user_states.get(chat_id))
+        print("User id: ", chat_id)
+        
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                print("Target quiz id: ", target[chat_id]) # For debugging
+                target_quiz = target[chat_id]
+                cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
+                retrieved_rows = cur.fetchall()
+                set_of_questions = [row[0] for row in retrieved_rows]
+                global_counter[chat_id] = len(set_of_questions)
+                quiz_questions[chat_id] = set_of_questions
+                print("Number of questions: ", global_counter[chat_id]) # For debugging
+                for question in set_of_questions:
+                    print(question) # For debugging
+                cur.close()
+                return await start_quiz(chat_id, text) # Recurse
+                
+        except Exception as error:
+            print('Exception in "in_quiz" block: ', error)
+            bot_reply = "An error occured. Please contact the developer using /feedback."
+            await reply(chat_id, bot_reply)
+            return 
+    else:
+        current_index = global_counter[chat_id] - 1
+        current_question = quiz_questions[chat_id][current_index]
+        await reply(chat_id, current_question) # Send question
+        await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
+        
+        if global_counter.get(chat_id) == 0:
+            print("EOF")
+            del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
+            return "Reached the end of the line."
 
-    global_counter[chat_id] -= 1
-    print("Answer received! Bot reply processing...")
-    return 
+        global_counter[chat_id] -= 1
+        print("Answer received! Bot reply processing...")
+        return 
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -374,9 +402,9 @@ async def webhook(req: Request):
         /addquestion <quiz name> - Add question to a quiz.
         /viewquizzes - Show a list of saved quizzes.
         /startquiz <quiz name> - Start answering a saved quiz.
-        /editquiz <quiz name> - Modify an existing quiz.
+        /editquiz <quiz name> - Rename an existing quiz.
         /deletequiz <quiz name> - Delete a quiz. This cannot be undone.
-        /randomquestion <quiz name> - Instantly get a random question from the an existing quiz.
+        /randomquestion - Instantly get a random question from any of the existing quiz.
         /viewscore - Shows the user's total points.
         /feedback <message> - Send feedback about the bot to the developer.
         """
@@ -422,6 +450,7 @@ async def webhook(req: Request):
             session_score[chat_id] = 0 # Initialize global variable
             bot_reply = "Please reply with your answer for each question."
             await reply(chat_id, bot_reply)
+            
 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
@@ -486,33 +515,6 @@ async def webhook(req: Request):
         
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
-    
-        if global_counter.get(chat_id) is None:
-            # For debugging
-            print("Current user state: ", user_states.get(chat_id))
-            print("User id: ", chat_id)
-            
-            try:
-                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                    cur = connection.cursor()
-                    print("Target quiz id: ", target[chat_id]) # For debugging
-                    target_quiz = target[chat_id]
-                    cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
-                    retrieved_rows = cur.fetchall()
-                    set_of_questions = [row[0] for row in retrieved_rows]
-                    global_counter[chat_id] = len(set_of_questions)
-                    quiz_questions[chat_id] = set_of_questions
-                    print("Number of questions: ", global_counter[chat_id]) # For debugging
-                    for question in set_of_questions:
-                        print(question) # For debugging
-                    cur.close()
-                    await start_quiz(chat_id, text) # Function call
-                    
-            except Exception as error:
-                print('Exception in "in_quiz" block: ', error)
-                bot_reply = "An error occured. Please contact the developer using /feedback."
-                await reply(chat_id, bot_reply)
-                return 
         
         answer_check = await start_quiz(chat_id, text) # Call recursive function
         
