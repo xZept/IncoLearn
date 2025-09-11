@@ -33,6 +33,19 @@ global_counter = {}
 quiz_questions = {}
 session_score = {}
 
+# Send bot reply
+async def reply(chat_id, message):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{BASE_URL}/sendMessage",
+                json={"chat_id": chat_id, "text": message}
+            )
+            return response.json()
+    except Exception as error:
+        print(f"Error sending message: {error}")
+        return None
+
 # Get id 
 async def fetch_id(column_name, table_name, row_name, row_value):
     try:
@@ -270,28 +283,23 @@ async def start_quiz(chat_id, text):
         except Exception as error:
             print('Exception in "in_quiz" block: ', error)
             bot_reply = "An error occured. Please contact the developer using /feedback."
-            return bot_reply
+            reply(chat_id, bot_reply)
+            return 
     
     else:
         current_index = global_counter[chat_id] - 1
         current_question = quiz_questions[chat_id][current_index]
-        bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
-        # Send question
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{BASE_URL}/sendMessage",
-                json={"chat_id": chat_id, "text": current_question}
-            )
+        answer = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
+        reply(chat_id, current_question) # Send question
         global_counter[chat_id] -= 1
         
         if global_counter.get(chat_id) == 0:
-            bot_reply = "Reached the end of the line."
             print("EOF")
             del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
-            return bot_reply
+            return "Reached the end of the line."
     
         print("Answer received! Bot reply processing...")
-        return bot_reply
+        return answer
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -405,6 +413,7 @@ async def webhook(req: Request):
         /viewscore - Shows the user's total points.
         /feedback <message> - Send feedback about the bot to the developer.
         """
+        reply(chat_id, bot_reply)
     
     elif text == "/viewquizzes":
         try:
@@ -427,6 +436,8 @@ async def webhook(req: Request):
             cur.close()
         except sqlite3.OperationalError:
             bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
+        
+        reply(chat_id, bot_reply)
                 
     elif text.startswith("/startquiz"):
         chat_id = data['message']['chat']['id']
@@ -447,6 +458,8 @@ async def webhook(req: Request):
 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
+        
+        reply(chat_id, bot_reply)
         
     elif text.startswith("/editquiz"):
         chat_id = data['message']['chat']['id']
@@ -479,6 +492,8 @@ async def webhook(req: Request):
             bot_reply = "Invalid input. Make sure to follow this format /editquiz <quiz name>."
             print("User did not input the quiz name.") # For debugging
         
+        reply(chat_id, bot_reply)
+        
     elif text.startswith("/deletequiz"):
         chat_id = data['message']['chat']['id']
         
@@ -501,16 +516,18 @@ async def webhook(req: Request):
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
             print(error)
         
+        reply(chat_id, bot_reply)
+        
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
     
-        bot_reply = await start_quiz(chat_id, text) # Call recursive function
+        check_answer = await start_quiz(chat_id, text) # Call recursive function
         
-        if bot_reply == "Reached the end of the line.":
+        if check_answer == "Reached the end of the line.":
             bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
             del session_score[chat_id]
+            reply(chat_id, bot_reply)
             
-        
     elif user_states.get(chat_id) == "awaiting_question":        
         # Receive the message form the user and store it
         try:
@@ -583,6 +600,8 @@ async def webhook(req: Request):
         else:
             bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
             print("User took too long to respond.")
+        
+        reply(chat_id, bot_reply)
             
     elif user_states.get(chat_id) == "awaiting_quiz_name":        
         # Receive the message form the user and store it
@@ -625,6 +644,8 @@ async def webhook(req: Request):
             bot_reply = "Quiz name cannot be blank. Please try again and enter a valid quiz name."
             print("User took too long to respond.")
             
+        reply(chat_id, bot_reply)
+            
     elif user_states.get(chat_id) == "awaiting_answer":        
         # Receive the message form the user and store it
         try:
@@ -666,6 +687,8 @@ async def webhook(req: Request):
             bot_reply = "Answer cannot be blank. Please try again and enter a valid question. Please try again."
             print("User took too long to respond.")
         
+        reply(chat_id, bot_reply)
+        
     elif text.startswith("/newquiz"):
         # Obtain user information
         from_user = data["message"]["from"]
@@ -691,6 +714,8 @@ async def webhook(req: Request):
         
         #For debugging
         await display_tables()
+        
+        reply(chat_id, bot_reply)
         
     elif text.startswith("/addquestion"):
         # Store quiz name
@@ -725,6 +750,7 @@ async def webhook(req: Request):
             print(error)
             bot_reply = "Quiz does not exist. Try checking your spelling or use /newquiz to create one."
         
+        reply(chat_id, bot_reply)
         
     elif text == "/start":
         # Obtain user data then store it using a function
@@ -739,6 +765,7 @@ async def webhook(req: Request):
         bot_reply = """
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
+        reply(chat_id, bot_reply)
         
     elif text.startswith("/feedback"):
         from_user = data["message"]["from"]
@@ -753,7 +780,8 @@ async def webhook(req: Request):
         s.sendmail("allenjames.laxamana03@gmail.com", "allenjames.laxamana@gmail.com", message)
         s.quit()
         
-        bot_reply = "Feedback sent to Allen James!"
+        bot_reply = "Feedback sent to the developer!"
+        reply(chat_id, bot_reply)
         
     elif text == "/randomquestion":    
         chat_id = data['message']['chat']['id']
@@ -775,8 +803,9 @@ async def webhook(req: Request):
         except sqlite3.OperationalError as error:
             print("Error in /randomquestion block: ", error)
             bot_reply = "No question has been added yet! Add a new one using /addquestion <quiz name>."
-                
         
+        reply(chat_id, bot_reply)
+                
     elif user_states.get(chat_id) == "awaiting_random_answer":
         # Store necessary parameters
         user_id = chat_id = data['message']['chat']['id']
@@ -797,13 +826,11 @@ async def webhook(req: Request):
             print("Key error encountered in awaiting_random_answer block: ", error)
             pass
         
+        reply(chat_id, bot_reply)
+        
     else:
         bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
+        reply(chat_id, bot_reply)
         
-    await client.get(
-        f"{BASE_URL}/sendMessage",
-        params={"chat_id": chat_id, "text": bot_reply}
-    )
-            
     return{"ok": True}
 
