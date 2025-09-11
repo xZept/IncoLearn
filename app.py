@@ -502,6 +502,7 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
         
+        session_score[chat_id] = 0
         bot_reply = await start_quiz(chat_id, text) # Call recursive function
         
         if bot_reply == "Reached the end of the line.":
@@ -781,6 +782,7 @@ async def webhook(req: Request):
         
         try: 
             # Check if the answer is correct using a function
+            session_score[chat_id] = 0
             bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
             del session_score[chat_id]
         except TypeError as error:
