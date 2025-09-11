@@ -246,13 +246,7 @@ async def check_answer(user_id, question, answer, chat_id):
 
 # Recursive function for /startquiz
 async def start_quiz(chat_id, text):
-    if global_counter.get(chat_id) == 0:
-        bot_reply = "Reached the end of the line."
-        print("EOF")
-        del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
-        return bot_reply
-            
-    elif global_counter.get(chat_id) is None:
+    if global_counter.get(chat_id) is None:
         # For debugging
         print("Current user state: ", user_states.get(chat_id))
         print("User id: ", chat_id)
@@ -289,6 +283,13 @@ async def start_quiz(chat_id, text):
                 json={"chat_id": chat_id, "text": current_question}
             )
         global_counter[chat_id] -= 1
+        
+        if global_counter.get(chat_id) == 0:
+            bot_reply = "Reached the end of the line."
+            print("EOF")
+            del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
+            return bot_reply
+    
         print("Answer received! Bot reply processing...")
         return bot_reply
 
