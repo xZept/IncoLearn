@@ -460,7 +460,7 @@ async def webhook(req: Request):
                         for question in set_of_questions:
                             print(question) # For debugging
                         cur.close()
-                        await show_question(chat_id, text)
+                        await show_question(chat_id)
                         
                 except Exception as error:
                     print('Exception in "in_quiz" block: ', error)
@@ -532,7 +532,7 @@ async def webhook(req: Request):
         chat_id = data['message']['chat']['id']
         
         handle_question(chat_id, text)
-        answer_check = await show_question(chat_id, text) # Call recursive function
+        answer_check = await show_question(chat_id) # Call recursive function
         
         if answer_check == "Reached the end of the line.":
             bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
