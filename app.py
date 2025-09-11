@@ -198,7 +198,7 @@ async def check_answer(user_id, question, answer, chat_id):
                 if (answer == answer_from_table.strip().lower()):   
                     await record_attempt("1", user_id, retrieved_question_id)
                     print("Answers matched!")
-                    bot_reply = "You got it right! A point is added to your total score"
+                    bot_reply = "You got it right! A point is added to your total score."
                     session_score[chat_id] += 1 # Add one point to session score
                     return bot_reply
                 
@@ -281,13 +281,13 @@ async def start_quiz(chat_id, text):
     else:
         current_index = global_counter[chat_id] - 1
         current_question = quiz_questions[chat_id][current_index]
+        bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
         # Send question
         async with httpx.AsyncClient() as client:
             await client.post(
                 f"{BASE_URL}/sendMessage",
                 json={"chat_id": chat_id, "text": current_question}
             )
-        bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
         global_counter[chat_id] -= 1
         print("Answer received! Bot reply processing...")
         return bot_reply
