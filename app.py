@@ -283,7 +283,7 @@ async def start_quiz(chat_id, text):
         except Exception as error:
             print('Exception in "in_quiz" block: ', error)
             bot_reply = "An error occured. Please contact the developer using /feedback."
-            reply(chat_id, bot_reply)
+            await reply(chat_id, bot_reply)
             return 
     
     else:
@@ -413,7 +413,7 @@ async def webhook(req: Request):
         /viewscore - Shows the user's total points.
         /feedback <message> - Send feedback about the bot to the developer.
         """
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
     
     elif text == "/viewquizzes":
         try:
@@ -437,7 +437,7 @@ async def webhook(req: Request):
         except sqlite3.OperationalError:
             bot_reply = "There are no saved quizzes yet! Create one by using /newquiz <quiz name>."
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
                 
     elif text.startswith("/startquiz"):
         chat_id = data['message']['chat']['id']
@@ -459,7 +459,7 @@ async def webhook(req: Request):
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/editquiz"):
         chat_id = data['message']['chat']['id']
@@ -492,7 +492,7 @@ async def webhook(req: Request):
             bot_reply = "Invalid input. Make sure to follow this format /editquiz <quiz name>."
             print("User did not input the quiz name.") # For debugging
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/deletequiz"):
         chat_id = data['message']['chat']['id']
@@ -516,7 +516,7 @@ async def webhook(req: Request):
             bot_reply = "Quiz does not exist. To create a new quiz, use /newquiz <quiz name>."
             print(error)
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
@@ -526,7 +526,7 @@ async def webhook(req: Request):
         if check_answer == "Reached the end of the line.":
             bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
             del session_score[chat_id]
-            reply(chat_id, bot_reply)
+            await reply(chat_id, bot_reply)
             
     elif user_states.get(chat_id) == "awaiting_question":        
         # Receive the message form the user and store it
@@ -601,7 +601,7 @@ async def webhook(req: Request):
             bot_reply = "Question cannot be blank. Please try again and enter a valid question. Please try again with /addquestion <quiz name> then send the message afterwards."
             print("User took too long to respond.")
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
             
     elif user_states.get(chat_id) == "awaiting_quiz_name":        
         # Receive the message form the user and store it
@@ -644,7 +644,7 @@ async def webhook(req: Request):
             bot_reply = "Quiz name cannot be blank. Please try again and enter a valid quiz name."
             print("User took too long to respond.")
             
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
             
     elif user_states.get(chat_id) == "awaiting_answer":        
         # Receive the message form the user and store it
@@ -687,7 +687,7 @@ async def webhook(req: Request):
             bot_reply = "Answer cannot be blank. Please try again and enter a valid question. Please try again."
             print("User took too long to respond.")
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/newquiz"):
         # Obtain user information
@@ -715,7 +715,7 @@ async def webhook(req: Request):
         #For debugging
         await display_tables()
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/addquestion"):
         # Store quiz name
@@ -750,7 +750,7 @@ async def webhook(req: Request):
             print(error)
             bot_reply = "Quiz does not exist. Try checking your spelling or use /newquiz to create one."
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text == "/start":
         # Obtain user data then store it using a function
@@ -765,7 +765,7 @@ async def webhook(req: Request):
         bot_reply = """
         Welcome to IncoLearn! To start creating your first quiz, type /newquiz. Type /help to view other available commands.
         """
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/feedback"):
         from_user = data["message"]["from"]
@@ -781,7 +781,7 @@ async def webhook(req: Request):
         s.quit()
         
         bot_reply = "Feedback sent to the developer!"
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     elif text == "/randomquestion":    
         chat_id = data['message']['chat']['id']
@@ -804,7 +804,7 @@ async def webhook(req: Request):
             print("Error in /randomquestion block: ", error)
             bot_reply = "No question has been added yet! Add a new one using /addquestion <quiz name>."
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
                 
     elif user_states.get(chat_id) == "awaiting_random_answer":
         # Store necessary parameters
@@ -826,11 +826,11 @@ async def webhook(req: Request):
             print("Key error encountered in awaiting_random_answer block: ", error)
             pass
         
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     else:
         bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
-        reply(chat_id, bot_reply)
+        await reply(chat_id, bot_reply)
         
     return{"ok": True}
 
