@@ -794,11 +794,11 @@ async def webhook(req: Request):
                 cur.close()
                 
                 # Set user states and target
-                target[chat_id] = question
+                target[chat_id] = question[0]
                 session_score[chat_id] = 0
                 user_states[chat_id] = "awaiting_random_answer"
                 
-                bot_reply = question
+                bot_reply = question[0]
         
         except sqlite3.OperationalError as error:
             print("Error in /randomquestion block: ", error)
