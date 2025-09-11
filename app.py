@@ -407,6 +407,20 @@ async def webhook(req: Request):
         
         await reply(chat_id, bot_reply)
                 
+    elif text == "/viewscore":
+        chat_id = data['message']['chat']['id']
+        try:
+            with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                cur = connection.cursor()
+                cur.execute("SELECT COUNT(*) FROM quiz WHERE user_id=? AND score=1", (chat_id,))
+                correct_attempts = cur.fetchone()[0]
+                cur.close()
+                bot_reply = f"In total, you accumulated {correct_attempts} points! Keep going nigga!"
+        except Exception as error:
+            print("Error in /viewscore block: ", error)
+            bot_reply = "You haven't answered any question yet. To start answering, use /startquiz <quiz name> or /randomquestion."
+        
+        
     elif text.startswith("/startquiz"):
         chat_id = data['message']['chat']['id']
         text = text[10:].strip() # Slice and strip the quiz name
