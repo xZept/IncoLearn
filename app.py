@@ -252,12 +252,12 @@ async def check_answer(user_id, question, answer, chat_id):
             return
         await reply(chat_id, bot_reply)
 
-# Recursive function for /startquiz
+# Function for /startquiz
 async def start_quiz(chat_id, text):
     current_index = global_counter[chat_id] - 1
     current_question = quiz_questions[chat_id][current_index]
-    await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
     await reply(chat_id, current_question) # Send question
+    await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
     
     if global_counter.get(chat_id) == 0:
         print("EOF")
@@ -506,7 +506,7 @@ async def webhook(req: Request):
                     for question in set_of_questions:
                         print(question) # For debugging
                     cur.close()
-                    return await start_quiz(chat_id, text) # Recurse the function
+                    await start_quiz(chat_id, text) # Function call
                     
             except Exception as error:
                 print('Exception in "in_quiz" block: ', error)
