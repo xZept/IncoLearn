@@ -521,9 +521,9 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
     
-        check_answer = await start_quiz(chat_id, text) # Call recursive function
+        answer_check = await start_quiz(chat_id, text) # Call recursive function
         
-        if check_answer == "Reached the end of the line.":
+        if answer_check == "Reached the end of the line.":
             bot_reply = f"Well done! You just finished the quiz! You scored a total of {session_score.get(chat_id)} points. Use /viewscore to see how much points were added."
             del session_score[chat_id]
             await reply(chat_id, bot_reply)
