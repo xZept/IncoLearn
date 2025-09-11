@@ -213,7 +213,7 @@ async def check_answer(user_id, question, answer, chat_id):
                     print("Answers matched!")
                     bot_reply = "You got it right! A point is added to your total score."
                     session_score[chat_id] += 1 # Add one point to session score
-                    return bot_reply
+                    return 
                 
                 else:
                     await record_attempt("0", user_id, retrieved_question_id)
@@ -227,16 +227,16 @@ async def check_answer(user_id, question, answer, chat_id):
                         print("Correct answer: ", correct_answer) # For debugging
                         cur.close()
                         bot_reply = f"Incorrect. The correct answer is {correct_answer}."
-                        return bot_reply
+                        return
         else:
             print("retrived_question_id not found.")
             bot_reply = "No answer has been added to that question yet. Please re-create the question using the /addquestion command."
-            return bot_reply
+            return 
         
     except sqlite3.OperationalError as error:
         print("Error in check answer function: ", error)
         bot_reply = "There was an internal database error. Please contact the developer using /feedback."
-        return bot_reply
+        return 
         
     except TypeError as error:
         try:
@@ -255,7 +255,9 @@ async def check_answer(user_id, question, answer, chat_id):
         except Exception as error:
             print("Exception occured in the last except statement of check_answer:", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
-            return bot_reply
+            return
+    
+    await reply(chat_id, bot_reply)
 
 # Recursive function for /startquiz
 async def start_quiz(chat_id, text):
@@ -289,17 +291,17 @@ async def start_quiz(chat_id, text):
     else:
         current_index = global_counter[chat_id] - 1
         current_question = quiz_questions[chat_id][current_index]
-        answer = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
-        reply(chat_id, current_question) # Send question
-        global_counter[chat_id] -= 1
+        await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
+        await reply(chat_id, current_question) # Send question
         
         if global_counter.get(chat_id) == 0:
             print("EOF")
             del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
             return "Reached the end of the line."
     
+        global_counter[chat_id] -= 1
         print("Answer received! Bot reply processing...")
-        return answer
+        return 
 
 # Remove the surrounding special characters from a tuple item
 async def format_tuple_item(tuple_item):
@@ -453,13 +455,13 @@ async def webhook(req: Request):
             target[chat_id] = retrieved_quiz_id
             global_counter[chat_id] = None
             session_score[chat_id] = 0 # Initialize global variable
-            await start_quiz(chat_id, text) # Call recursive function
             bot_reply = "Please reply with your answer for each question."
+            await reply(chat_id, bot_reply)
+            await start_quiz(chat_id, text) # Call recursive function
 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
-        
-        await reply(chat_id, bot_reply)
+            await reply(chat_id, bot_reply)
         
     elif text.startswith("/editquiz"):
         chat_id = data['message']['chat']['id']
@@ -813,20 +815,19 @@ async def webhook(req: Request):
         
         try: 
             # Check if the answer is correct using a function
-            bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
+            await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
             del session_score[chat_id]
+            pass
         except TypeError as error:
             print("Type error occured in awaiting_random_answer block: ", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
-            
+            await reply(chat_id, bot_reply)
         try:
             # Clear temporary variables
             del target[user_id], user_states[user_id], session_score[user_id]
         except KeyError as error:
             print("Key error encountered in awaiting_random_answer block: ", error)
             pass
-        
-        await reply(chat_id, bot_reply)
         
     else:
         bot_reply = f"You said: {text}, which is not a valid command. Use /help to see the list of available commands."
