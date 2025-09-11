@@ -199,6 +199,7 @@ async def check_answer(user_id, question, answer, chat_id):
                     await record_attempt("1", user_id, retrieved_question_id)
                     print("Answers matched!")
                     bot_reply = "You got it right! A point is added to your total score"
+                    session_score[chat_id] += 1 # Add one point to session score
                     return bot_reply
                 
                 else:
@@ -247,6 +248,7 @@ async def check_answer(user_id, question, answer, chat_id):
 async def start_quiz(chat_id, text):
     if global_counter.get(chat_id) == 0:
         bot_reply = "Reached the end of the line."
+        print("EOF")
         del user_states[chat_id], global_counter[chat_id], target[chat_id], quiz_questions[chat_id] # Reset global variables
         return bot_reply
             
@@ -287,6 +289,7 @@ async def start_quiz(chat_id, text):
             )
         bot_reply = await check_answer(chat_id, quiz_questions[chat_id][current_index], text, chat_id)
         global_counter[chat_id] -= 1
+        print("Answer received! Bot reply processing...")
         return bot_reply
 
 # Remove the surrounding special characters from a tuple item
@@ -437,9 +440,9 @@ async def webhook(req: Request):
             user_states[chat_id] = "in_quiz"
             target[chat_id] = retrieved_quiz_id
             global_counter[chat_id] = None
-            bot_reply = "Please reply with your answer for each question."
             await start_quiz(chat_id, text) # Call recursive function
-                
+            bot_reply = "Please reply with your answer for each question."
+
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
         
@@ -779,6 +782,7 @@ async def webhook(req: Request):
         try: 
             # Check if the answer is correct using a function
             bot_reply = await check_answer(user_id, str(target[user_id][0]), answer, chat_id)
+            del session_score[chat_id]
         except TypeError as error:
             print("Type error occured in awaiting_random_answer block: ", error)
             bot_reply = "No answer has been added to that question yet. Please re-create the quiz using /addquestion <quiz name>."
