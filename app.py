@@ -418,6 +418,7 @@ async def webhook(req: Request):
                 cur = connection.cursor()
                 cur.execute("SELECT COUNT(*) FROM attempt WHERE user_id=? AND score=1", (chat_id,))
                 correct_attempts = cur.fetchone()[0]
+                print("Debug - Correct Attempts:", correct_attempts)
                 cur.close()
                 bot_reply = f"In total, you accumulated {correct_attempts} points! Keep going nigga!"
         except Exception as error:
