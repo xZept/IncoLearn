@@ -424,6 +424,7 @@ async def webhook(req: Request):
             print("Error in /viewscore block: ", error)
             bot_reply = "You haven't answered any question yet. To start answering, use /startquiz <quiz name> or /randomquestion."
         
+        await reply(chat_id, bot_reply)
         
     elif text.startswith("/startquiz"):
         chat_id = data['message']['chat']['id']
