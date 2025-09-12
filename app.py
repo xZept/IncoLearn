@@ -256,6 +256,7 @@ async def check_answer(user_id, question, answer, chat_id):
 async def handle_question(chat_id, answer):
     current_index = global_counter[chat_id] - 1
     await check_answer(chat_id, quiz_questions[chat_id][current_index], answer, chat_id)
+    global_counter[chat_id] -= 1
     return   
     
 # Function for /startquiz
@@ -269,7 +270,6 @@ async def show_question(chat_id):
         current_question = quiz_questions[chat_id][current_index]
         await reply(chat_id, current_question) # Send question
 
-        global_counter[chat_id] -= 1
         print("show_question passed")
         return 
 
@@ -442,31 +442,30 @@ async def webhook(req: Request):
             bot_reply = "Please reply with your answer for each question."
             await reply(chat_id, bot_reply)
 
-            if global_counter.get(chat_id) is None:
-                # For debugging
-                print("Current user state: ", user_states.get(chat_id))
-                print("User id: ", chat_id)
-                try:
-                    with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
-                        cur = connection.cursor()
-                        print("Target quiz id: ", target[chat_id]) # For debugging
-                        target_quiz = target[chat_id]
-                        cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
-                        retrieved_rows = cur.fetchall()
-                        set_of_questions = [row[0] for row in retrieved_rows]
-                        global_counter[chat_id] = len(set_of_questions)
-                        quiz_questions[chat_id] = set_of_questions
-                        print("Number of questions: ", global_counter[chat_id]) # For debugging
-                        for question in set_of_questions:
-                            print(question) # For debugging
-                        cur.close()
-                        await show_question(chat_id)
-                        
-                except Exception as error:
-                    print('Exception in "in_quiz" block: ', error)
-                    bot_reply = "An error occured. Please contact the developer using /feedback."
-                    await reply(chat_id, bot_reply)
-                    return 
+            # For debugging
+            print("Current user state: ", user_states.get(chat_id))
+            print("User id: ", chat_id)
+            try:
+                with sqlite3.connect("db/incolearn.db", timeout=20) as connection:
+                    cur = connection.cursor()
+                    print("Target quiz id: ", target[chat_id]) # For debugging
+                    target_quiz = target[chat_id]
+                    cur.execute("SELECT question_text FROM question WHERE quiz_id = ?", (target_quiz,))
+                    retrieved_rows = cur.fetchall()
+                    set_of_questions = [row[0] for row in retrieved_rows]
+                    global_counter[chat_id] = len(set_of_questions)
+                    quiz_questions[chat_id] = set_of_questions
+                    print("Number of questions: ", global_counter[chat_id]) # For debugging
+                    for question in set_of_questions:
+                        print(question) # For debugging
+                    cur.close()
+                    await show_question(chat_id)
+                    
+            except Exception as error:
+                print('Exception in "in_quiz" block: ', error)
+                bot_reply = "An error occured. Please contact the developer using /feedback."
+                await reply(chat_id, bot_reply)
+                return 
         else:
             bot_reply = "Quiz cannot be found! Please create the quiz first using /newquiz."
             await reply(chat_id, bot_reply)
@@ -531,7 +530,7 @@ async def webhook(req: Request):
     elif user_states.get(chat_id) == "in_quiz":
         chat_id = data['message']['chat']['id']
         
-        handle_question(chat_id, text)
+        await handle_question(chat_id, text)
         answer_check = await show_question(chat_id) # Call recursive function
         
         if answer_check == "Reached the end of the line.":
